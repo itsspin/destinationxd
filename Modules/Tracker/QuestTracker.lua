@@ -1,6 +1,7 @@
 ------------------------------------------------------------------------
 -- DestinationXD - QuestTracker.lua
 -- Hook into WoW's quest supertracking system
+-- Fixed: reliable beacon display for all quest types with retry logic
 ------------------------------------------------------------------------
 local ADDON_NAME, DXD = ...
 
@@ -12,6 +13,7 @@ local Utils = DXD.Utils
 -- State
 local lastTrackedQuestID = nil
 local isTrackingCorpse = false
+local retryTimer = nil
 
 ------------------------------------------------------------------------
 -- SUPERTRACKING INTEGRATION
@@ -23,7 +25,6 @@ function QuestTracker:OnSuperTrackingChanged()
 
     -- Check for user waypoint first (higher priority)
     if C_SuperTrack.IsSuperTrackingUserWaypoint() then
-        -- WaypointTracker handles this
         return
     end
 
@@ -32,8 +33,7 @@ function QuestTracker:OnSuperTrackingChanged()
     if questID and questID > 0 then
         self:TrackQuest(questID)
     elseif not C_SuperTrack.IsSuperTrackingAnything() then
-        -- Nothing is being tracked
-        if DXD.state.targetType == "quest" then
+        if DXD.state.targetType == "quest" or DXD.state.targetType == "dungeon" then
             DXD:ClearTarget()
         end
     end
@@ -45,9 +45,57 @@ end
 -- QUEST TRACKING
 ------------------------------------------------------------------------
 
+--- Try multiple methods to find quest location
+local function FindQuestPosition(questID, mapID)
+    -- Method 1: QuestPOI waypoint
+    if QuestHasPOIInfo and QuestHasPOIInfo(questID) then
+        local x, y = C_QuestLog.GetNextWaypointForMap(questID, mapID)
+        if x and y and (x > 0 or y > 0) then
+            return mapID, x, y
+        end
+    end
+
+    -- Method 2: C_QuestLog.GetNextWaypoint
+    if C_QuestLog.GetNextWaypoint then
+        local wpMapID, wpX, wpY = C_QuestLog.GetNextWaypoint(questID)
+        if wpMapID and wpX and wpY and (wpX > 0 or wpY > 0) then
+            return wpMapID, wpX, wpY
+        end
+    end
+
+    -- Method 3: Try quest-specific map
+    local questMapID = GetQuestUiMapID and GetQuestUiMapID(questID)
+    if questMapID and questMapID > 0 and questMapID ~= mapID then
+        if QuestHasPOIInfo and QuestHasPOIInfo(questID) then
+            local x, y = C_QuestLog.GetNextWaypointForMap(questID, questMapID)
+            if x and y and (x > 0 or y > 0) then
+                return questMapID, x, y
+            end
+        end
+        -- Fallback to center of quest map
+        return questMapID, 0.5, 0.5
+    end
+
+    -- Method 4: Try task quest API (world quests, bonus objectives)
+    if C_TaskQuest and C_TaskQuest.GetQuestLocation then
+        local taskMapID, x, y = C_TaskQuest.GetQuestLocation(questID)
+        if taskMapID and x and y then
+            return taskMapID, x, y
+        end
+    end
+
+    return nil, nil, nil
+end
+
 --- Start tracking a quest objective
 function QuestTracker:TrackQuest(questID)
     if not questID then return end
+
+    -- Cancel any pending retry
+    if retryTimer then
+        retryTimer:Cancel()
+        retryTimer = nil
+    end
 
     -- Get quest info
     local questName = C_QuestLog.GetTitleForQuestID(questID)
@@ -76,52 +124,50 @@ function QuestTracker:TrackQuest(questID)
         end
     end
 
-    -- Try to get quest POI position
+    -- Try to get quest position
     local mapID = C_Map.GetBestMapForUnit("player")
     if not mapID then return end
 
-    -- Get quest waypoint from the navigation system
-    -- The supertracking system in WoW already computes waypoint positions
-    -- We rely on C_Navigation.GetDistance() for distance,
-    -- and quest POI data for position
+    local foundMapID, foundX, foundY = FindQuestPosition(questID, mapID)
 
-    -- Try QuestPOI data
-    local questMapID = GetQuestUiMapID and GetQuestUiMapID(questID)
-    if questMapID and questMapID > 0 then
-        mapID = questMapID
-    end
+    if foundMapID and foundX and foundY then
+        DXD:SetTarget(foundMapID, foundX, foundY, targetType, questName, objectiveText)
+    else
+        -- Position not available yet - happens when clicking quest before POI data loads
+        DXD:Debug("Quest " .. questName .. " - position not ready, retrying...")
 
-    -- Try to get the quest waypoint position from the map pin
-    local waypoints = C_QuestLog.GetQuestObjectives(questID)
-    local targetSet = false
-
-    -- Use C_TaskQuest or C_QuestLog to find quest location
-    if QuestHasPOIInfo and QuestHasPOIInfo(questID) then
-        local x, y = C_QuestLog.GetNextWaypointForMap(questID, mapID)
-        if x and y then
-            DXD:SetTarget(mapID, x, y, targetType, questName, objectiveText)
-            targetSet = true
-        end
-    end
-
-    -- Fallback: try getting next waypoint (returns mapID, x, y)
-    if not targetSet and C_QuestLog.GetNextWaypoint then
-        local wpMapID, wpX, wpY = C_QuestLog.GetNextWaypoint(questID)
-        if wpMapID and wpX and wpY then
-            DXD:SetTarget(wpMapID, wpX, wpY, targetType, questName, objectiveText)
-            targetSet = true
-        end
-    end
-
-    -- If we can't find a specific position, still set up tracking
-    -- The beacon won't render, but distance/arrow will work via C_Navigation
-    if not targetSet then
-        DXD:Debug("Quest tracked but no POI position found for: " .. questName)
-        -- We can still use C_Navigation.GetDistance() for distance display
+        -- Still mark as tracking so arrow works via C_Navigation
         DXD.state.hasTarget = true
         DXD.state.targetType = targetType
         DXD.state.targetName = questName
         DXD.state.targetDescription = objectiveText
+
+        -- Notify modules so beacon at least tries to render
+        for _, mod in pairs(DXD.modules) do
+            if mod.OnTargetChanged then
+                mod:OnTargetChanged()
+            end
+        end
+
+        -- Retry up to 5 times with increasing delay
+        local retryCount = 0
+        local function RetryFindPosition()
+            retryCount = retryCount + 1
+            if retryCount > 5 then return end
+
+            local rMapID = C_Map.GetBestMapForUnit("player")
+            if not rMapID then return end
+
+            local rFoundMap, rFoundX, rFoundY = FindQuestPosition(questID, rMapID)
+            if rFoundMap and rFoundX and rFoundY then
+                DXD:SetTarget(rFoundMap, rFoundX, rFoundY, targetType, questName, objectiveText)
+                DXD:Debug("Quest position found on retry " .. retryCount)
+            else
+                retryTimer = C_Timer.NewTimer(0.4 * retryCount, RetryFindPosition)
+            end
+        end
+
+        retryTimer = C_Timer.NewTimer(0.3, RetryFindPosition)
     end
 end
 
@@ -131,7 +177,6 @@ end
 
 function QuestTracker:OnPlayerDead()
     isTrackingCorpse = true
-    -- Will be handled when corpse location is available
     DXD:Debug("Player died, ready to track corpse")
 end
 
@@ -144,7 +189,6 @@ function QuestTracker:OnPlayerAlive()
     end
 end
 
---- Track the player's corpse (called after release)
 function QuestTracker:TrackCorpse()
     if not isTrackingCorpse then return end
 
@@ -163,17 +207,15 @@ end
 ------------------------------------------------------------------------
 
 function QuestTracker:OnUpdate(elapsed)
-    -- Check for corpse tracking
     if isTrackingCorpse and not DXD.state.hasTarget then
         self:TrackCorpse()
     end
 
-    -- Update quest distance from C_Navigation if we're quest tracking
-    if DXD.state.hasTarget and DXD.state.targetType == "quest" then
+    -- Keep distance updated for quest tracking via C_Navigation
+    if DXD.state.hasTarget and (DXD.state.targetType == "quest" or DXD.state.targetType == "dungeon") then
         if C_Navigation and C_Navigation.GetDistance then
             local navDist = C_Navigation.GetDistance()
             if navDist and navDist > 0 then
-                -- Use nav distance as a reference for our calculations
                 DXD.state.navDistance = navDist
             end
         end
@@ -185,7 +227,6 @@ end
 ------------------------------------------------------------------------
 
 function QuestTracker:Initialize()
-    -- Check if something is already being tracked
     if C_SuperTrack.IsSuperTrackingAnything() then
         C_Timer.After(0.5, function()
             self:OnSuperTrackingChanged()

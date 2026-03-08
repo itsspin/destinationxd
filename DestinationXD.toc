@@ -27,6 +27,7 @@ Data\ZoneData.lua
 Data\PortalData.lua
 Data\FloorData.lua
 Data\MidnightZones.lua
+Data\CityServicesData.lua
 
 # Modules
 Modules\Beacon\BeaconPool.lua
