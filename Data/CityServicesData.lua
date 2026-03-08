@@ -129,6 +129,132 @@ DXD.CityServices = {
             { name = "Transmogrifier",    type = "transmog",   x = 0.504, y = 0.306 },
         },
     },
+
+    -- =========================================================
+    -- SILVERMOON CITY (Midnight - Renewed)
+    -- =========================================================
+    [2602] = {
+        cityName = "Silvermoon City",
+        services = {
+            { name = "Auction House",     type = "auction",    x = 0.542, y = 0.533 },
+            { name = "Bank",              type = "bank",       x = 0.535, y = 0.516 },
+            { name = "Barber Shop",        type = "barber",     x = 0.521, y = 0.554 },
+            { name = "Flight Master",     type = "flight",     x = 0.533, y = 0.343 },
+            { name = "Inn",               type = "inn",        x = 0.578, y = 0.516 },
+            { name = "Mailbox",           type = "mail",       x = 0.540, y = 0.530 },
+            { name = "Portal Room",       type = "portal",     x = 0.498, y = 0.348 },
+            { name = "Profession Trainers", type = "profession", x = 0.558, y = 0.554 },
+            { name = "Repair Vendor",     type = "repair",     x = 0.562, y = 0.530 },
+            { name = "Stable Master",     type = "stable",     x = 0.530, y = 0.340 },
+            { name = "Transmogrifier",    type = "transmog",   x = 0.519, y = 0.558 },
+            { name = "Void Storage",      type = "void",       x = 0.517, y = 0.562 },
+            { name = "Guild Bank",        type = "guildbank",  x = 0.537, y = 0.518 },
+            { name = "Timeways Portal",   type = "portal",     x = 0.533, y = 0.661 },
+        },
+    },
+
+    -- =========================================================
+    -- IRONFORGE
+    -- =========================================================
+    [87] = {
+        cityName = "Ironforge",
+        services = {
+            { name = "Auction House",     type = "auction",    x = 0.258, y = 0.745 },
+            { name = "Bank",              type = "bank",       x = 0.355, y = 0.607 },
+            { name = "Barber Shop",        type = "barber",     x = 0.476, y = 0.892 },
+            { name = "Flight Master",     type = "flight",     x = 0.558, y = 0.480 },
+            { name = "Inn",               type = "inn",        x = 0.183, y = 0.515 },
+            { name = "Mailbox",           type = "mail",       x = 0.266, y = 0.749 },
+            { name = "Repair Vendor",     type = "repair",     x = 0.441, y = 0.894 },
+            { name = "Profession Trainers", type = "profession", x = 0.430, y = 0.845 },
+            { name = "Transmogrifier",    type = "transmog",   x = 0.476, y = 0.890 },
+        },
+    },
+
+    -- =========================================================
+    -- THUNDER BLUFF
+    -- =========================================================
+    [88] = {
+        cityName = "Thunder Bluff",
+        services = {
+            { name = "Auction House",     type = "auction",    x = 0.448, y = 0.574 },
+            { name = "Bank",              type = "bank",       x = 0.463, y = 0.462 },
+            { name = "Flight Master",     type = "flight",     x = 0.470, y = 0.499 },
+            { name = "Inn",               type = "inn",        x = 0.455, y = 0.464 },
+            { name = "Mailbox",           type = "mail",       x = 0.453, y = 0.570 },
+            { name = "Repair Vendor",     type = "repair",     x = 0.444, y = 0.570 },
+            { name = "Profession Trainers", type = "profession", x = 0.393, y = 0.368 },
+        },
+    },
+
+    -- =========================================================
+    -- BORALUS (BFA Alliance Hub)
+    -- =========================================================
+    [1161] = {
+        cityName = "Boralus",
+        services = {
+            { name = "Auction House",     type = "auction",    x = 0.565, y = 0.494 },
+            { name = "Bank",              type = "bank",       x = 0.590, y = 0.520 },
+            { name = "Barber Shop",        type = "barber",     x = 0.577, y = 0.477 },
+            { name = "Flight Master",     type = "flight",     x = 0.688, y = 0.548 },
+            { name = "Inn",               type = "inn",        x = 0.739, y = 0.579 },
+            { name = "Mailbox",           type = "mail",       x = 0.567, y = 0.496 },
+            { name = "Portal Room",       type = "portal",     x = 0.702, y = 0.262 },
+            { name = "Repair Vendor",     type = "repair",     x = 0.585, y = 0.516 },
+            { name = "Transmogrifier",    type = "transmog",   x = 0.577, y = 0.473 },
+        },
+    },
+
+    -- =========================================================
+    -- DAZAR'ALOR (BFA Horde Hub)
+    -- =========================================================
+    [1165] = {
+        cityName = "Dazar'alor",
+        services = {
+            { name = "Auction House",     type = "auction",    x = 0.420, y = 0.334 },
+            { name = "Bank",              type = "bank",       x = 0.448, y = 0.128 },
+            { name = "Barber Shop",        type = "barber",     x = 0.422, y = 0.372 },
+            { name = "Flight Master",     type = "flight",     x = 0.512, y = 0.414 },
+            { name = "Inn",               type = "inn",        x = 0.484, y = 0.281 },
+            { name = "Mailbox",           type = "mail",       x = 0.418, y = 0.338 },
+            { name = "Portal Room",       type = "portal",     x = 0.502, y = 0.152 },
+            { name = "Repair Vendor",     type = "repair",     x = 0.432, y = 0.340 },
+            { name = "Transmogrifier",    type = "transmog",   x = 0.424, y = 0.376 },
+        },
+    },
+}
+
+------------------------------------------------------------------------
+-- CITY MAP ID ALIASES
+-- WoW sometimes returns sub-zone map IDs instead of the city map ID.
+-- This maps sub-zone IDs to their parent city so services still display.
+------------------------------------------------------------------------
+DXD.CityMapAliases = {
+    -- Silvermoon sub-zones (Midnight)
+    [2603] = 2602,  -- Eversong Woods (Renewed) -> Silvermoon
+    [2604] = 2602,  -- Ghostlands (Renewed) -> Silvermoon (if near city)
+    [2606] = 2602,  -- Isle of Quel'Danas -> Silvermoon
+
+    -- Stormwind sub-zones
+    [1453] = 84,    -- Stormwind sub-map
+
+    -- Orgrimmar sub-zones
+    [86]   = 85,    -- Orgrimmar (Cleft of Shadow variant)
+
+    -- Dalaran sub-zones
+    [628]  = 627,   -- Dalaran - The Underbelly
+    [629]  = 627,   -- Dalaran sub-zone
+
+    -- Oribos sub-zones
+    [1671] = 1670,  -- Ring of Fates
+    [1672] = 1670,  -- Ring of Transference
+    [1673] = 1670,  -- Broker's Den
+
+    -- Dornogal sub-zones
+    [2340] = 2339,  -- City of Threads approach
+
+    -- Boralus sub-zones
+    [1162] = 1161,  -- Boralus sub-map
 }
 
 ------------------------------------------------------------------------
