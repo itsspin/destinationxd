@@ -28,6 +28,7 @@ local isVisible = false
 local currentColor = nil
 local fadeAlpha = 0
 local targetFadeAlpha = 0
+local lastElapsed = 0.016
 
 ------------------------------------------------------------------------
 -- FRAME CREATION
@@ -155,7 +156,7 @@ local function UpdateBeamPosition(screenX, screenY, distance)
     end
 
     local morphProgress = Anim:GetMorphProgress()
-    local beamHeight = Anim:GetBeamHeight(distance)
+    local beamHeight = Anim:GetBeamHeight(distance, screenY)
     local beamWidth = Anim:GetBeamWidth(distance)
     local glowWidth = Anim:GetGlowWidth(distance)
     local pulseAlpha = Anim:GetPulseAlpha(distance)
@@ -168,7 +169,7 @@ local function UpdateBeamPosition(screenX, screenY, distance)
     local fadeDelta = targetFadeAlpha - fadeAlpha
     if math.abs(fadeDelta) > 0.01 then
         local speed = fadeDelta > 0 and (1 / Config.ANIMATION.BEACON_FADE_IN) or (1 / Config.ANIMATION.BEACON_FADE_OUT)
-        fadeAlpha = fadeAlpha + fadeDelta * math.min(1, speed * 0.05)
+        fadeAlpha = fadeAlpha + fadeDelta * math.min(1, speed * lastElapsed)
     else
         fadeAlpha = targetFadeAlpha
     end
@@ -322,9 +323,9 @@ end
 function Beacon:OnUpdate(elapsed)
     if not isVisible then return end
     if not DXD.state.hasTarget then return end
-    if not updateAccum then return end
 
-    if not updateAccum:ShouldUpdate(elapsed) then return end
+    -- No throttling - run every frame for smooth visuals
+    lastElapsed = elapsed
 
     local state = DXD.state
 
@@ -339,11 +340,21 @@ function Beacon:OnUpdate(elapsed)
 
     local screenX, screenY, onScreen = Utils.WorldToScreen(targetX, targetY, targetZ)
 
-    if onScreen then
+    -- Hide beam when target is off-screen or occluded by terrain
+    -- When showThroughTerrain is false, only show when C_Navigation
+    -- reports a valid unclamped position (target is actually visible)
+    local shouldShow = onScreen
+    if shouldShow and not DXD.db.showThroughTerrain then
+        if C_Navigation and C_Navigation.WasClampedToScreen and C_Navigation.WasClampedToScreen() then
+            shouldShow = false
+        end
+    end
+
+    if shouldShow then
         UpdateBeamPosition(screenX, screenY, state.distance3D)
         ApplyBeaconColor(DXD:GetBeaconColor())
     else
-        -- Target is behind camera or off screen
+        -- Target is behind camera, off screen, or occluded
         if beamFrame then beamFrame:Hide() end
         if baseFrame then baseFrame:Hide() end
         if fireflyFrame then fireflyFrame:Hide() end
