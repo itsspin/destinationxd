@@ -285,6 +285,10 @@ local function UpdateHUD(elapsed)
             local step = route.steps[stepIdx]
             if step then
                 local stepStr = "|cff66d9efStep " .. stepIdx .. "/" .. #route.steps .. "|r  " .. (step.name or "Travel")
+                -- Hearthstone steps get a highlighted instruction
+                if step.method == 4 then -- METHOD.HEARTHSTONE
+                    stepStr = "|cffff6666USE NOW:|r " .. (step.name or "Hearthstone")
+                end
                 stepText:SetText(stepStr)
                 stepText:Show()
             else

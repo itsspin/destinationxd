@@ -355,6 +355,52 @@ DXD.MythicPlusDungeons = {
 }
 
 ------------------------------------------------------------------------
+-- CITY MAP RESOLUTION
+-- Robust resolver: alias table -> multi-level parent chain walk.
+-- This is the SINGLE authoritative function all code should call.
+------------------------------------------------------------------------
+function DXD:ResolveCityMapID(mapID)
+    if not mapID then
+        mapID = C_Map.GetBestMapForUnit("player")
+    end
+    if not mapID then return nil, nil end
+
+    -- 1. Direct match
+    if self.CityServices and self.CityServices[mapID] then
+        return mapID, self.CityServices[mapID]
+    end
+
+    -- 2. Alias table
+    if self.CityMapAliases and self.CityMapAliases[mapID] then
+        local aliased = self.CityMapAliases[mapID]
+        if self.CityServices and self.CityServices[aliased] then
+            return aliased, self.CityServices[aliased]
+        end
+    end
+
+    -- 3. Walk up the FULL parent map chain (up to 10 levels)
+    --    At each level, check both direct CityServices and alias table
+    local current = mapID
+    for _ = 1, 10 do
+        local info = C_Map.GetMapInfo(current)
+        if not info or not info.parentMapID or info.parentMapID <= 0 then break end
+        current = info.parentMapID
+
+        if self.CityServices and self.CityServices[current] then
+            return current, self.CityServices[current]
+        end
+        if self.CityMapAliases and self.CityMapAliases[current] then
+            local aliased = self.CityMapAliases[current]
+            if self.CityServices and self.CityServices[aliased] then
+                return aliased, self.CityServices[aliased]
+            end
+        end
+    end
+
+    return nil, nil
+end
+
+------------------------------------------------------------------------
 -- SERVICE TYPE DISPLAY INFO
 ------------------------------------------------------------------------
 DXD.ServiceIcons = {

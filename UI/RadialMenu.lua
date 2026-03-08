@@ -27,32 +27,7 @@ local ITEM_SIZE = 72
 local MAX_ITEMS = 8
 local CENTER_SIZE = 70
 
-------------------------------------------------------------------------
--- CITY MAP RESOLUTION (shared helper)
-------------------------------------------------------------------------
-
-local function ResolveCityMapID()
-    local playerMapID = C_Map.GetBestMapForUnit("player")
-    local cityMapID = playerMapID
-
-    if cityMapID and DXD.CityMapAliases and DXD.CityMapAliases[cityMapID] then
-        cityMapID = DXD.CityMapAliases[cityMapID]
-    end
-    if cityMapID and DXD.CityServices and not DXD.CityServices[cityMapID] then
-        local parentInfo = cityMapID and C_Map.GetMapInfo(cityMapID)
-        if parentInfo and parentInfo.parentMapID and parentInfo.parentMapID > 0 then
-            local parentID = parentInfo.parentMapID
-            if DXD.CityServices[parentID] then
-                cityMapID = parentID
-            elseif DXD.CityMapAliases and DXD.CityMapAliases[parentID] then
-                cityMapID = DXD.CityMapAliases[parentID]
-            end
-        end
-    end
-
-    local cityData = cityMapID and DXD.CityServices and DXD.CityServices[cityMapID]
-    return cityMapID, cityData
-end
+-- City map resolution uses the shared DXD:ResolveCityMapID() from CityServicesData.lua
 
 ------------------------------------------------------------------------
 -- MENU DATA
@@ -61,10 +36,32 @@ end
 local function GetMenuItems()
     local items = {}
 
-    local cityMapID, cityData = ResolveCityMapID()
+    local cityMapID, cityData = DXD:ResolveCityMapID()
+
+    -- Always include Travel Planner and Clear Waypoint
+    table.insert(items, {
+        label = "Open Travel Planner",
+        shortLabel = "Travel\nPlanner",
+        color = { r = 0.4, g = 0.85, b = 1.0 },
+        action = function()
+            local tpFrame = DXD:GetModule("TravelPlannerFrame")
+            if tpFrame then tpFrame:Toggle() end
+        end,
+    })
+
+    table.insert(items, {
+        label = "Clear Waypoint",
+        shortLabel = "Clear\nWaypoint",
+        color = { r = 0.9, g = 0.25, b = 0.25 },
+        action = function()
+            DXD:ClearTarget()
+            DXD:Print("Waypoint cleared.")
+        end,
+    })
 
     if cityData then
-        local priority = { "auction", "bank", "flight", "portal", "repair", "inn", "mail", "transmog" }
+        -- In a city: show top services
+        local priority = { "auction", "bank", "flight", "portal", "repair", "inn" }
         for _, svcType in ipairs(priority) do
             if #items >= MAX_ITEMS then break end
             for _, svc in ipairs(cityData.services) do
@@ -84,26 +81,7 @@ local function GetMenuItems()
             end
         end
     else
-        table.insert(items, {
-            label = "Open Travel Planner",
-            shortLabel = "Travel\nPlanner",
-            color = { r = 0.4, g = 0.85, b = 1.0 },
-            action = function()
-                local tpFrame = DXD:GetModule("TravelPlannerFrame")
-                if tpFrame then tpFrame:Toggle() end
-            end,
-        })
-
-        table.insert(items, {
-            label = "Clear Waypoint",
-            shortLabel = "Clear\nWaypoint",
-            color = { r = 0.9, g = 0.25, b = 0.25 },
-            action = function()
-                DXD:ClearTarget()
-                DXD:Print("Waypoint cleared.")
-            end,
-        })
-
+        -- Not in a city: show M+ dungeons + settings
         table.insert(items, {
             label = "Settings",
             shortLabel = "Settings",

@@ -106,6 +106,19 @@ DXD.PortalData = {
     { srcMapID = 125, srcX = 0.400, srcY = 0.630, dstMapID = 85,  dstX = 0.5, dstY = 0.5, faction = "Horde",    name = "Dalaran (N) to Orgrimmar",   travelTime = 3, type = "portal" },
     { srcMapID = 125, srcX = 0.403, srcY = 0.628, dstMapID = 84,  dstX = 0.5, dstY = 0.5, faction = "Alliance", name = "Dalaran (N) to Stormwind",   travelTime = 3, type = "portal" },
 
+    -- Boralus (BFA Alliance) back to capitals
+    { srcMapID = 1161, srcX = 0.705, srcY = 0.265, dstMapID = 84,   dstX = 0.5, dstY = 0.5, faction = "Alliance", name = "Boralus to Stormwind",             travelTime = 3, type = "portal" },
+    { srcMapID = 1161, srcX = 0.708, srcY = 0.263, dstMapID = 87,   dstX = 0.5, dstY = 0.5, faction = "Alliance", name = "Boralus to Ironforge",             travelTime = 3, type = "portal" },
+    { srcMapID = 1161, srcX = 0.711, srcY = 0.261, dstMapID = 111,  dstX = 0.5, dstY = 0.5, faction = "Alliance", name = "Boralus to Shattrath",             travelTime = 3, type = "portal" },
+
+    -- Dazar'alor (BFA Horde) back to capitals
+    { srcMapID = 1165, srcX = 0.505, srcY = 0.155, dstMapID = 85,   dstX = 0.5, dstY = 0.5, faction = "Horde",    name = "Dazar'alor to Orgrimmar",          travelTime = 3, type = "portal" },
+    { srcMapID = 1165, srcX = 0.508, srcY = 0.153, dstMapID = 88,   dstX = 0.5, dstY = 0.5, faction = "Horde",    name = "Dazar'alor to Thunder Bluff",      travelTime = 3, type = "portal" },
+    { srcMapID = 1165, srcX = 0.511, srcY = 0.151, dstMapID = 110,  dstX = 0.5, dstY = 0.5, faction = "Horde",    name = "Dazar'alor to Silvermoon City",    travelTime = 3, type = "portal" },
+
+    -- Silvermoon (Midnight) to Oribos (missing link)
+    { srcMapID = 2602, srcX = 0.515, srcY = 0.340, dstMapID = 1670, dstX = 0.5, dstY = 0.5, faction = "Both",     name = "Silvermoon (Midnight) to Oribos",  travelTime = 3, type = "portal" },
+
     -----------------------------------------------------------------
     -- BOATS & ZEPPELINS
     -----------------------------------------------------------------
