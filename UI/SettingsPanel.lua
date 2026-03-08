@@ -126,13 +126,11 @@ local function CreateSettingsPanel()
     -- === BEACON ===
     yOffset = yOffset - 12
     yOffset = CreateSectionHeader(content, "BEACON", yOffset)
-    yOffset = CreateDropdownSetting(content, "Beam style", "beamStyle", {
-        { value = "modern", label = "Modern Glow" },
-        { value = "classic", label = "Classic Pillar" },
-        { value = "minimal", label = "Minimal Dot" },
-    }, yOffset)
+    yOffset = CreateSliderSetting(content, "Beacon scale", "beaconScale", 0.5, 2.5, 0.1, yOffset)
     yOffset = CreateSliderSetting(content, "Beam opacity", "beamOpacity", 0.2, 1.0, 0.1, yOffset)
+    yOffset = CreateSliderSetting(content, "Beam width", "beamWidthScale", 0.5, 3.0, 0.25, yOffset)
     yOffset = CreateCheckboxSetting(content, "Show through terrain", "showThroughTerrain", yOffset)
+    yOffset = CreateCheckboxSetting(content, "Show target name on beacon", "showBeaconName", yOffset)
 
     -- === ELEVATION ===
     yOffset = yOffset - 12

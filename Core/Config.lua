@@ -98,10 +98,10 @@ Config.BEACON = {
     PULSE_MIN_ALPHA   = 0.75,
     PULSE_MAX_ALPHA   = 0.95,
 
-    -- Beam visual
-    BEAM_WIDTH_BASE   = 4,    -- pixels (core shaft)
+    -- Beam visual (larger default for visibility, user-scalable)
+    BEAM_WIDTH_BASE   = 5,    -- pixels (core shaft)
     BEAM_HEIGHT_BASE  = 0,    -- 0 = extend to top of screen
-    GLOW_WIDTH_BASE   = 16,   -- pixels (inner glow width)
+    GLOW_WIDTH_BASE   = 22,   -- pixels (inner glow width)
 
     -- Close-range firefly bob
     BOB_AMPLITUDE     = 3,    -- pixels
@@ -162,9 +162,11 @@ Config.DEFAULTS = {
     arrivalDistance = 5,
 
     -- Beacon
-    beamStyle = "modern",   -- "modern", "classic", "minimal"
-    beamOpacity = 0.80,
+    beaconScale = 1.2,      -- Overall beacon scale (1.2 = slightly larger default)
+    beamOpacity = 0.85,
+    beamWidthScale = 1.5,   -- Beam width multiplier for visibility
     showThroughTerrain = false,
+    showBeaconName = true,
 
     -- Elevation
     showElevation = true,

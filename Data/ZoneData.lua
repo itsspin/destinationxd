@@ -44,6 +44,19 @@ DXD.ZoneData = {
             ["Deadwind Pass"]      = { mapID = 42,  faction = "Both" },
             ["Twilight Highlands"] = { mapID = 241, faction = "Both" },
             ["Gilneas"]            = { mapID = 217, faction = "Alliance" },
+            -- Dungeons
+            ["The Deadmines"]      = { mapID = 291, faction = "Both", dungeon = true },
+            ["Shadowfang Keep"]    = { mapID = 310, faction = "Both", dungeon = true },
+            ["The Stockade"]       = { mapID = 225, faction = "Alliance", dungeon = true },
+            ["Gnomeregan"]         = { mapID = 226, faction = "Both", dungeon = true },
+            ["Scarlet Monastery"]  = { mapID = 302, faction = "Both", dungeon = true },
+            ["Scholomance"]        = { mapID = 476, faction = "Both", dungeon = true },
+            ["Stratholme"]         = { mapID = 317, faction = "Both", dungeon = true },
+            ["Blackrock Depths"]   = { mapID = 242, faction = "Both", dungeon = true },
+            ["Blackrock Spire"]    = { mapID = 250, faction = "Both", dungeon = true },
+            ["Sunken Temple"]      = { mapID = 220, faction = "Both", dungeon = true },
+            ["Zul'Gurub"]          = { mapID = 337, faction = "Both", dungeon = true },
+            ["Karazhan"]           = { mapID = 350, faction = "Both", dungeon = true },
         },
     },
 
@@ -81,6 +94,16 @@ DXD.ZoneData = {
             ["Azuremyst Isle"]     = { mapID = 97,  faction = "Alliance" },
             ["Bloodmyst Isle"]     = { mapID = 106, faction = "Alliance" },
             ["Uldum"]              = { mapID = 249, faction = "Both" },
+            -- Dungeons
+            ["Ragefire Chasm"]     = { mapID = 213, faction = "Horde", dungeon = true },
+            ["Wailing Caverns"]    = { mapID = 279, faction = "Both", dungeon = true },
+            ["Blackfathom Deeps"]  = { mapID = 221, faction = "Both", dungeon = true },
+            ["Razorfen Kraul"]     = { mapID = 301, faction = "Both", dungeon = true },
+            ["Razorfen Downs"]     = { mapID = 300, faction = "Both", dungeon = true },
+            ["Maraudon"]           = { mapID = 280, faction = "Both", dungeon = true },
+            ["Dire Maul"]          = { mapID = 234, faction = "Both", dungeon = true },
+            ["Zul'Farrak"]         = { mapID = 219, faction = "Both", dungeon = true },
+            ["Ahn'Qiraj"]          = { mapID = 319, faction = "Both", dungeon = true },
         },
     },
 
@@ -120,6 +143,15 @@ DXD.ZoneData = {
             ["Icecrown"]             = { mapID = 118, faction = "Both" },
             ["Crystalsong Forest"]   = { mapID = 127, faction = "Both" },
             ["Wintergrasp"]          = { mapID = 123, faction = "Both" },
+            -- Dungeons
+            ["Utgarde Keep"]         = { mapID = 133, faction = "Both", dungeon = true },
+            ["The Nexus"]            = { mapID = 129, faction = "Both", dungeon = true },
+            ["Azjol-Nerub"]          = { mapID = 157, faction = "Both", dungeon = true },
+            ["Drak'Tharon Keep"]     = { mapID = 160, faction = "Both", dungeon = true },
+            ["Halls of Stone"]       = { mapID = 140, faction = "Both", dungeon = true },
+            ["Halls of Lightning"]   = { mapID = 138, faction = "Both", dungeon = true },
+            ["The Oculus"]           = { mapID = 142, faction = "Both", dungeon = true },
+            ["Pit of Saron"]         = { mapID = 183, faction = "Both", dungeon = true },
         },
     },
 
@@ -273,6 +305,35 @@ DXD.ZoneData = {
             ["Blade's Edge Mountains"] = { mapID = 105, faction = "Both" },
             ["Netherstorm"]          = { mapID = 109, faction = "Both" },
             ["Shadowmoon Valley"]    = { mapID = 104, faction = "Both" },
+            -- Dungeons
+            ["Hellfire Ramparts"]    = { mapID = 347, faction = "Both", dungeon = true },
+            ["The Blood Furnace"]    = { mapID = 348, faction = "Both", dungeon = true },
+            ["The Shattered Halls"]  = { mapID = 349, faction = "Both", dungeon = true },
+            ["The Slave Pens"]       = { mapID = 265, faction = "Both", dungeon = true },
+            ["The Underbog"]         = { mapID = 262, faction = "Both", dungeon = true },
+            ["Mana-Tombs"]           = { mapID = 272, faction = "Both", dungeon = true },
+            ["Shadow Labyrinth"]     = { mapID = 264, faction = "Both", dungeon = true },
+            ["The Mechanar"]         = { mapID = 267, faction = "Both", dungeon = true },
+            ["The Arcatraz"]         = { mapID = 269, faction = "Both", dungeon = true },
+        },
+    },
+
+    -----------------------------------------------------------------
+    -- DUNGEONS (Current Expansion - TWW)
+    -----------------------------------------------------------------
+    ["Dungeons"] = {
+        continent = true,
+        mapID = 0,
+        children = {
+            -- The War Within Dungeons
+            ["The Rookery"]          = { mapID = 2315, faction = "Both", dungeon = true },
+            ["The Stonevault"]       = { mapID = 2341, faction = "Both", dungeon = true },
+            ["City of Threads"]      = { mapID = 2343, faction = "Both", dungeon = true },
+            ["Ara-Kara"]             = { mapID = 2357, faction = "Both", dungeon = true },
+            ["Darkflame Cleft"]      = { mapID = 2359, faction = "Both", dungeon = true },
+            ["Priory of the Sacred Flame"] = { mapID = 2361, faction = "Both", dungeon = true },
+            ["The Dawnbreaker"]      = { mapID = 2360, faction = "Both", dungeon = true },
+            ["Cinderbrew Meadery"]   = { mapID = 2358, faction = "Both", dungeon = true },
         },
     },
 }

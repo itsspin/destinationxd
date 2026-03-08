@@ -1,8 +1,8 @@
 ------------------------------------------------------------------------
 -- DestinationXD - Beacon.lua
--- The in-world waypoint beam - the visual centerpiece
--- Inspired by WaypointUI's pillar beam with gradient, base icon, and
--- animated FX - but with our own moonlight aesthetic
+-- The in-world waypoint beam - visual centerpiece
+-- Inspired by WaypointUI's pillar beam with gradient, contextual icon,
+-- and elevation indicators. Square icon base with masked beam reveal.
 ------------------------------------------------------------------------
 local ADDON_NAME, DXD = ...
 
@@ -16,9 +16,10 @@ local Anim = DXD:GetModule("BeaconAnimations")
 
 -- Beacon visual frames
 local beamFrame      -- The main beam shaft
-local baseFrame      -- Ground marker with objective icon
+local baseFrame      -- Ground marker with objective icon (square, WaypointUI-style)
 local fireflyFrame   -- Close-range floating point
 local chevronFrames = {} -- Elevation chevrons on the beam
+local elevBadge      -- Elevation badge on base icon (above/below/cave)
 
 -- State
 local isVisible = false
@@ -26,6 +27,7 @@ local currentColor = nil
 local fadeAlpha = 0
 local targetFadeAlpha = 0
 local lastElapsed = 0.016
+local beamMaskScale = 0  -- Masked reveal (0 = hidden, 1 = fully revealed)
 
 -- Objective type icon mapping (WoW built-in atlas names)
 local OBJECTIVE_ICONS = {
@@ -36,6 +38,17 @@ local OBJECTIVE_ICONS = {
     tomtom    = "Waypoint-MapPin-ChatIcon",
     dungeon   = "Dungeon",
     flight    = "FlightMaster",
+}
+
+-- Fallback to simple colored texture if atlas not available
+local OBJECTIVE_FALLBACK_COLORS = {
+    quest     = { r = 1.0, g = 0.84, b = 0.0 },
+    waypoint  = { r = 0.4, g = 0.85, b = 1.0 },
+    corpse    = { r = 0.9, g = 0.25, b = 0.25 },
+    travel    = { r = 0.88, g = 0.88, b = 0.92 },
+    tomtom    = { r = 1.0, g = 0.55, b = 0.0 },
+    dungeon   = { r = 0.7, g = 0.45, b = 1.0 },
+    flight    = { r = 0.27, g = 1.0, b = 0.53 },
 }
 
 ------------------------------------------------------------------------
@@ -67,47 +80,94 @@ local function CreateBeaconFrames()
     beamFrame.glow2:SetBlendMode("ADD")
     beamFrame.glow2:SetPoint("BOTTOM")
 
-    -- Gradient overlay to fade beam at the top (transparent at top, opaque at bottom)
+    -- Gradient overlay to fade beam at the top
     beamFrame.gradient = beamFrame:CreateTexture(nil, "ARTWORK", nil, 3)
     beamFrame.gradient:SetTexture("Interface\\BUTTONS\\WHITE8X8")
     beamFrame.gradient:SetBlendMode("MOD")
     beamFrame.gradient:SetPoint("BOTTOM")
     beamFrame.gradient:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(0, 0, 0, 0))
 
-    -- Base ground marker (larger, more visible)
+    -- Beam base glow (soft circle at the base of beam)
+    beamFrame.baseGlow = beamFrame:CreateTexture(nil, "ARTWORK", nil, -1)
+    beamFrame.baseGlow:SetTexture("Interface\\COMMON\\Indicator-Yellow")
+    beamFrame.baseGlow:SetBlendMode("ADD")
+    beamFrame.baseGlow:SetPoint("BOTTOM", 0, -6)
+    beamFrame.baseGlow:SetSize(40, 12)
+    beamFrame.baseGlow:SetAlpha(0.15)
+
+    ----------------------------------------------------------------
+    -- BASE MARKER: Square icon (WaypointUI-inspired)
+    ----------------------------------------------------------------
     baseFrame = CreateFrame("Frame", "DXDBeaconBase", UIParent)
     baseFrame:SetFrameStrata("BACKGROUND")
     baseFrame:SetFrameLevel(5)
-    baseFrame:SetSize(28, 28)
+    baseFrame:SetSize(34, 34)
     baseFrame:Hide()
 
-    -- Base outer ring glow
-    baseFrame.ring = baseFrame:CreateTexture(nil, "ARTWORK", nil, 0)
-    baseFrame.ring:SetTexture("Interface\\COMMON\\RingBorder")
-    baseFrame.ring:SetBlendMode("ADD")
-    baseFrame.ring:SetAllPoints()
+    -- Square background plate (dark, subtle)
+    baseFrame.plate = baseFrame:CreateTexture(nil, "BACKGROUND")
+    baseFrame.plate:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    baseFrame.plate:SetAllPoints()
+    baseFrame.plate:SetVertexColor(0.03, 0.03, 0.06, 0.75)
 
-    -- Base fill glow (center dot)
-    baseFrame.glow = baseFrame:CreateTexture(nil, "ARTWORK", nil, 1)
-    baseFrame.glow:SetTexture("Interface\\COMMON\\Indicator-Yellow")
-    baseFrame.glow:SetBlendMode("ADD")
-    baseFrame.glow:SetSize(14, 14)
-    baseFrame.glow:SetPoint("CENTER")
+    -- Border (1px colored edge)
+    baseFrame.border = baseFrame:CreateTexture(nil, "ARTWORK", nil, -1)
+    baseFrame.border:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    baseFrame.border:SetPoint("TOPLEFT", -1, 1)
+    baseFrame.border:SetPoint("BOTTOMRIGHT", 1, -1)
 
-    -- Objective type icon
+    -- Inner glow (subtle color wash inside square)
+    baseFrame.innerGlow = baseFrame:CreateTexture(nil, "ARTWORK", nil, 0)
+    baseFrame.innerGlow:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    baseFrame.innerGlow:SetBlendMode("ADD")
+    baseFrame.innerGlow:SetPoint("TOPLEFT", 1, -1)
+    baseFrame.innerGlow:SetPoint("BOTTOMRIGHT", -1, 1)
+    baseFrame.innerGlow:SetAlpha(0.08)
+
+    -- Objective type icon (centered in square)
     baseFrame.icon = baseFrame:CreateTexture(nil, "OVERLAY", nil, 2)
-    baseFrame.icon:SetSize(16, 16)
+    baseFrame.icon:SetSize(20, 20)
     baseFrame.icon:SetPoint("CENTER", 0, 0)
-    baseFrame.icon:SetBlendMode("ADD")
     baseFrame.icon:SetAlpha(0.9)
 
-    -- Distance label at base
+    -- Distance label below base
     baseFrame.distText = baseFrame:CreateFontString(nil, "OVERLAY")
-    baseFrame.distText:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
+    baseFrame.distText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
     baseFrame.distText:SetShadowColor(0, 0, 0, 0.8)
     baseFrame.distText:SetShadowOffset(1, -1)
-    baseFrame.distText:SetPoint("TOP", baseFrame, "BOTTOM", 0, -2)
+    baseFrame.distText:SetPoint("TOP", baseFrame, "BOTTOM", 0, -3)
     baseFrame.distText:SetJustifyH("CENTER")
+
+    -- Target name label above base
+    baseFrame.nameText = baseFrame:CreateFontString(nil, "OVERLAY")
+    baseFrame.nameText:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
+    baseFrame.nameText:SetShadowColor(0, 0, 0, 0.8)
+    baseFrame.nameText:SetShadowOffset(1, -1)
+    baseFrame.nameText:SetPoint("BOTTOM", baseFrame, "TOP", 0, 3)
+    baseFrame.nameText:SetJustifyH("CENTER")
+    baseFrame.nameText:SetWidth(150)
+    baseFrame.nameText:SetWordWrap(false)
+
+    ----------------------------------------------------------------
+    -- ELEVATION BADGE (on top-right corner of base icon)
+    ----------------------------------------------------------------
+    elevBadge = CreateFrame("Frame", "DXDElevBadge", baseFrame)
+    elevBadge:SetFrameStrata("BACKGROUND")
+    elevBadge:SetFrameLevel(7)
+    elevBadge:SetSize(16, 16)
+    elevBadge:SetPoint("TOPLEFT", baseFrame, "TOPRIGHT", 2, 2)
+    elevBadge:Hide()
+
+    elevBadge.bg = elevBadge:CreateTexture(nil, "BACKGROUND")
+    elevBadge.bg:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    elevBadge.bg:SetAllPoints()
+    elevBadge.bg:SetVertexColor(0.03, 0.03, 0.06, 0.85)
+
+    elevBadge.text = elevBadge:CreateFontString(nil, "OVERLAY")
+    elevBadge.text:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    elevBadge.text:SetShadowColor(0, 0, 0, 0.8)
+    elevBadge.text:SetShadowOffset(1, -1)
+    elevBadge.text:SetPoint("CENTER")
 
     -- Firefly point (close range)
     fireflyFrame = CreateFrame("Frame", "DXDBeaconFirefly", UIParent)
@@ -165,22 +225,27 @@ local function ApplyBeaconColor(color)
     if beamFrame and beamFrame.glow2 then
         beamFrame.glow2:SetVertexColor(color.r, color.g, color.b, 0.10)
     end
-    -- Base ring
-    if baseFrame and baseFrame.ring then
-        baseFrame.ring:SetVertexColor(color.r, color.g, color.b, 0.5)
+    -- Base glow at bottom
+    if beamFrame and beamFrame.baseGlow then
+        beamFrame.baseGlow:SetVertexColor(color.r, color.g, color.b, 0.15)
     end
-    -- Base center glow
-    if baseFrame and baseFrame.glow then
-        baseFrame.glow:SetVertexColor(color.r, color.g, color.b, 0.6)
+
+    -- Square base: border + inner glow
+    if baseFrame then
+        if baseFrame.border then
+            baseFrame.border:SetVertexColor(color.r, color.g, color.b, 0.5)
+        end
+        if baseFrame.innerGlow then
+            baseFrame.innerGlow:SetVertexColor(color.r, color.g, color.b, 0.08)
+        end
+        if baseFrame.distText then
+            baseFrame.distText:SetTextColor(color.r, color.g, color.b, 0.7)
+        end
+        if baseFrame.nameText then
+            baseFrame.nameText:SetTextColor(color.r, color.g, color.b, 0.5)
+        end
     end
-    -- Base icon
-    if baseFrame and baseFrame.icon then
-        baseFrame.icon:SetVertexColor(color.r, color.g, color.b, 0.9)
-    end
-    -- Base distance text
-    if baseFrame and baseFrame.distText then
-        baseFrame.distText:SetTextColor(color.r, color.g, color.b, 0.7)
-    end
+
     -- Firefly
     if fireflyFrame and fireflyFrame.dot then
         fireflyFrame.dot:SetVertexColor(color.r, color.g, color.b, 0.9)
@@ -188,7 +253,8 @@ local function ApplyBeaconColor(color)
     if fireflyFrame and fireflyFrame.ring then
         fireflyFrame.ring:SetVertexColor(color.r, color.g, color.b, 0.3)
     end
-    -- Chevrons
+
+    -- Chevrons (use elevation colors)
     local elevState = DXD.state.elevationState
     local elevColor = Config.COLORS.ELEV_LEVEL
     if elevState == "above" then
@@ -211,16 +277,58 @@ local function UpdateBaseIcon()
         local info = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas)
         if info then
             baseFrame.icon:SetAtlas(atlas)
+            baseFrame.icon:SetTexCoord(0, 1, 0, 1)  -- Reset texcoord from any previous fallback
+            baseFrame.icon:SetDesaturated(true)
+            -- Tint the icon to match beacon color
+            local color = DXD:GetBeaconColor()
+            if color then
+                baseFrame.icon:SetVertexColor(color.r, color.g, color.b, 0.9)
+            end
             baseFrame.icon:Show()
         else
-            -- Fallback: use a simple dot for unknown atlas
+            -- Fallback: use a simple colored square indicator
             baseFrame.icon:SetTexture("Interface\\COMMON\\Indicator-Yellow")
+            baseFrame.icon:SetTexCoord(0, 1, 0, 1)
+            local fallback = OBJECTIVE_FALLBACK_COLORS[targetType]
+            if fallback then
+                baseFrame.icon:SetVertexColor(fallback.r, fallback.g, fallback.b, 0.9)
+            end
             baseFrame.icon:Show()
         end
     else
         baseFrame.icon:SetTexture("Interface\\COMMON\\Indicator-Yellow")
+        baseFrame.icon:SetTexCoord(0, 1, 0, 1)
         baseFrame.icon:Show()
     end
+end
+
+--- Update the elevation badge
+local function UpdateElevationBadge(distance)
+    if not elevBadge then return end
+    local elevState = DXD.state.elevationState
+    local vertDist = DXD.state.distanceVertical or 0
+
+    -- Only show if there's meaningful vertical difference and we're not too close/far
+    if elevState == "level" or not distance or distance < 5 or distance > 300 or vertDist < 5 then
+        elevBadge:Hide()
+        return
+    end
+
+    local elevColor, symbol
+    if elevState == "above" then
+        elevColor = Config.COLORS.ELEV_ABOVE
+        symbol = "\226\150\178"  -- ▲
+    elseif elevState == "below" then
+        elevColor = Config.COLORS.ELEV_BELOW
+        symbol = "\226\150\188"  -- ▼
+    else
+        elevBadge:Hide()
+        return
+    end
+
+    elevBadge.text:SetText(symbol)
+    elevBadge.text:SetTextColor(elevColor.r, elevColor.g, elevColor.b, 0.9)
+    elevBadge:Show()
 end
 
 ------------------------------------------------------------------------
@@ -273,8 +381,12 @@ local function UpdateBeamPosition(screenX, screenY, distance)
     local glowWidth = Anim:GetGlowWidth(distance)
     local pulseAlpha = Anim:GetPulseAlpha(distance)
 
-    -- Apply user opacity setting
-    local userOpacity = DXD.db and DXD.db.beamOpacity or 0.80
+    -- Apply user settings
+    local userOpacity = DXD.db and DXD.db.beamOpacity or 0.85
+    local userScale = DXD.db and DXD.db.beaconScale or 1.2
+    local widthScale = DXD.db and DXD.db.beamWidthScale or 1.5
+    beamWidth = beamWidth * widthScale
+    glowWidth = glowWidth * widthScale
 
     -- Apply idle fade (minimum 0.35 so beam is always visible when active)
     local idleAlpha = Anim:GetIdleAlpha()
@@ -298,55 +410,94 @@ local function UpdateBeamPosition(screenX, screenY, distance)
     end
     finalAlpha = finalAlpha * fadeAlpha
 
+    -- Masked beam reveal animation (scales from 0 to 1 on intro)
+    if targetFadeAlpha > 0 then
+        beamMaskScale = math.min(1, beamMaskScale + lastElapsed * 2.5)  -- ~0.4s to fully reveal
+    else
+        beamMaskScale = math.max(0, beamMaskScale - lastElapsed * 4)
+    end
+
     -- Check for arrival animation
     local arrivalScale, arrivalAlpha, arrivalComplete = Anim:UpdateArrival()
     if Anim:IsArrivalPlaying() then
         finalAlpha = finalAlpha * arrivalAlpha
     end
 
+    -- Apply masked reveal to beam height
+    local revealedHeight = beamHeight * beamMaskScale
+
     -- BEAM (far/medium range)
-    if morphProgress < 0.95 and beamHeight > 0 then
+    if morphProgress < 0.95 and revealedHeight > 2 then
         local beamAlpha = finalAlpha * (1 - morphProgress)
 
         beamFrame:ClearAllPoints()
         beamFrame:SetPoint("BOTTOM", UIParent, "BOTTOMLEFT", screenX, screenY)
 
         -- Core shaft (bright, thin)
-        beamFrame.shaft:SetSize(beamWidth, beamHeight)
+        beamFrame.shaft:SetSize(beamWidth, revealedHeight)
         beamFrame.shaft:SetAlpha(beamAlpha)
 
         -- Inner glow (wider, softer)
-        beamFrame.glow:SetSize(glowWidth, beamHeight)
+        beamFrame.glow:SetSize(glowWidth, revealedHeight)
         beamFrame.glow:SetAlpha(beamAlpha * 0.30)
 
         -- Outer glow (widest, very soft)
-        beamFrame.glow2:SetSize(glowWidth * 2.5, beamHeight)
+        beamFrame.glow2:SetSize(glowWidth * 2.5, revealedHeight)
         beamFrame.glow2:SetAlpha(beamAlpha * 0.12)
 
-        -- Gradient overlay (fade to transparent at top)
-        beamFrame.gradient:SetSize(glowWidth * 2.5, beamHeight)
+        -- Gradient overlay
+        beamFrame.gradient:SetSize(glowWidth * 2.5, revealedHeight)
         beamFrame.gradient:SetAlpha(1)
 
-        beamFrame:SetSize(glowWidth * 2.5, beamHeight)
+        -- Base glow at bottom of beam
+        beamFrame.baseGlow:SetAlpha(beamAlpha * 0.2)
+
+        beamFrame:SetSize(glowWidth * 2.5, revealedHeight)
         beamFrame:Show()
     else
         beamFrame:Hide()
     end
 
-    -- BASE MARKER (always visible when beam is showing)
+    -- BASE MARKER (square icon - always visible when beam is showing)
     if morphProgress < 0.8 then
-        local baseSize = Utils.Remap(distance or 100, 10, 200, 32, 18)
+        -- Distance-based scaling (closer = larger icon), scaled by user preference
+        local baseSize = Utils.Remap(distance or 100, 10, 200, 38, 24) * userScale
         baseFrame:SetSize(baseSize, baseSize)
-        baseFrame.glow:SetSize(baseSize * 0.5, baseSize * 0.5)
-        baseFrame.icon:SetSize(baseSize * 0.55, baseSize * 0.55)
+
+        -- Icon scales with base
+        local iconSize = baseSize * 0.60
+        baseFrame.icon:SetSize(iconSize, iconSize)
+
+        -- Border extends 1px beyond
+        baseFrame.border:ClearAllPoints()
+        baseFrame.border:SetPoint("TOPLEFT", -1, 1)
+        baseFrame.border:SetPoint("BOTTOMRIGHT", 1, -1)
+
         baseFrame:ClearAllPoints()
         baseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", screenX, screenY)
-        baseFrame:SetAlpha(finalAlpha * 0.8 * (1 - morphProgress))
+        baseFrame:SetAlpha(finalAlpha * 0.9 * (1 - morphProgress))
 
         -- Show distance at base
         if distance and baseFrame.distText then
             baseFrame.distText:SetText(Utils.FormatDistance(distance))
         end
+
+        -- Show target name (if enabled)
+        if DXD.db and DXD.db.showBeaconName ~= false then
+            local targetName = DXD.state.targetName
+            if targetName and baseFrame.nameText then
+                if #targetName > 25 then
+                    targetName = string.sub(targetName, 1, 22) .. "..."
+                end
+                baseFrame.nameText:SetText(targetName)
+                baseFrame.nameText:Show()
+            end
+        elseif baseFrame.nameText then
+            baseFrame.nameText:Hide()
+        end
+
+        -- Update elevation badge
+        UpdateElevationBadge(distance)
 
         baseFrame:Show()
     else
@@ -376,7 +527,7 @@ local function UpdateBeamPosition(screenX, screenY, distance)
     end
 
     -- CHEVRONS on the beam (medium distance, elevation differs)
-    UpdateChevrons(screenX, screenY, beamHeight, distance, finalAlpha, morphProgress)
+    UpdateChevrons(screenX, screenY, revealedHeight, distance, finalAlpha, morphProgress)
 
     if arrivalComplete then
         Beacon:Hide()
@@ -398,9 +549,11 @@ end
 function Beacon:Hide()
     isVisible = false
     targetFadeAlpha = 0
+    beamMaskScale = 0
     if beamFrame then beamFrame:Hide() end
     if baseFrame then baseFrame:Hide() end
     if fireflyFrame then fireflyFrame:Hide() end
+    if elevBadge then elevBadge:Hide() end
     for _, cf in ipairs(chevronFrames) do cf:Hide() end
 end
 
@@ -412,6 +565,7 @@ function Beacon:OnTargetChanged()
     self:Show()
     Anim:Reset()
     fadeAlpha = 0
+    beamMaskScale = 0  -- Reset masked reveal for fresh intro animation
     targetFadeAlpha = 1
     ApplyBeaconColor(DXD:GetBeaconColor())
     UpdateBaseIcon()
@@ -430,7 +584,6 @@ function Beacon:OnUpdate(elapsed)
     if not isVisible then return end
     if not DXD.state.hasTarget then return end
 
-    -- No throttling - run every frame for smooth visuals
     lastElapsed = elapsed
 
     local state = DXD.state
@@ -454,10 +607,9 @@ function Beacon:OnUpdate(elapsed)
     end
 
     if onScreen then
-        -- If clamped and showThroughTerrain is false, dim the beam
         if isClamped and not DXD.db.showThroughTerrain then
             local savedAlpha = fadeAlpha
-            fadeAlpha = fadeAlpha * 0.35  -- significantly dimmed
+            fadeAlpha = fadeAlpha * 0.35
             UpdateBeamPosition(screenX, screenY, state.distance3D)
             fadeAlpha = savedAlpha
         else
@@ -469,6 +621,7 @@ function Beacon:OnUpdate(elapsed)
         if beamFrame then beamFrame:Hide() end
         if baseFrame then baseFrame:Hide() end
         if fireflyFrame then fireflyFrame:Hide() end
+        if elevBadge then elevBadge:Hide() end
         for _, cf in ipairs(chevronFrames) do cf:Hide() end
     end
 end
