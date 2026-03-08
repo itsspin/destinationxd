@@ -285,6 +285,14 @@ local function GetOrCreateEntry(index)
         end
     end)
 
+    -- Forward mouse wheel to scroll container so buttons don't block scrolling
+    entry:EnableMouseWheel(true)
+    entry:SetScript("OnMouseWheel", function(self, delta)
+        if zoneScrollContainer and zoneScrollContainer.DoScroll then
+            zoneScrollContainer.DoScroll(delta)
+        end
+    end)
+
     zoneEntryPool[index] = entry
     return entry
 end
