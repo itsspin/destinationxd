@@ -147,9 +147,11 @@ local function BuildGraph(fromMapID, toMapID)
                             local flyTime = TravelPlanner:EstimateFlyTime(zones[i], zones[j])
                             -- Only add if estimated time is reasonable (same continent)
                             if flyTime and flyTime < 600 then
+                                local destInfo = C_Map.GetMapInfo(zones[j])
+                                local destName = (destInfo and destInfo.name) or "destination"
                                 AddEdge(zones[i], zones[j], flyTime,
                                     METHOD.WALK_FLY,
-                                    "Fly to " .. (C_Map.GetMapInfo(zones[j]) or {}).name or "destination")
+                                    "Fly to " .. destName)
                             end
                         end
                     end
