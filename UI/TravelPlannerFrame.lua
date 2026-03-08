@@ -285,6 +285,14 @@ local function GetOrCreateEntry(index)
         end
     end)
 
+    -- Forward mouse wheel to scroll container so buttons don't block scrolling
+    entry:EnableMouseWheel(true)
+    entry:SetScript("OnMouseWheel", function(self, delta)
+        if zoneScrollContainer and zoneScrollContainer.DoScroll then
+            zoneScrollContainer.DoScroll(delta)
+        end
+    end)
+
     zoneEntryPool[index] = entry
     return entry
 end
@@ -315,7 +323,26 @@ PopulateZoneList = function()
     -- ============================================================
     local serviceColor = { r = 0.50, g = 0.85, b = 1.0, a = 0.80 }
     local playerMapID = C_Map.GetBestMapForUnit("player")
-    local cityData = playerMapID and DXD.CityServices and DXD.CityServices[playerMapID]
+
+    -- Resolve sub-zone aliases to parent city map ID
+    local cityMapID = playerMapID
+    if cityMapID and DXD.CityMapAliases and DXD.CityMapAliases[cityMapID] then
+        cityMapID = DXD.CityMapAliases[cityMapID]
+    end
+    -- Also walk up the parent map chain if no direct match
+    if cityMapID and DXD.CityServices and not DXD.CityServices[cityMapID] then
+        local parentInfo = cityMapID and C_Map.GetMapInfo(cityMapID)
+        if parentInfo and parentInfo.parentMapID and parentInfo.parentMapID > 0 then
+            local parentID = parentInfo.parentMapID
+            if DXD.CityServices[parentID] then
+                cityMapID = parentID
+            elseif DXD.CityMapAliases and DXD.CityMapAliases[parentID] then
+                cityMapID = DXD.CityMapAliases[parentID]
+            end
+        end
+    end
+
+    local cityData = cityMapID and DXD.CityServices and DXD.CityServices[cityMapID]
 
     if cityData then
         local hasMatchingServices = false
@@ -373,7 +400,7 @@ PopulateZoneList = function()
                         svcEntry.isHeader = false
                         svcEntry.zoneName = svc.name
                         svcEntry.zoneData = {
-                            mapID = playerMapID,
+                            mapID = cityMapID,
                             x = svc.x,
                             y = svc.y,
                             service = true,
@@ -389,8 +416,8 @@ PopulateZoneList = function()
                         svcEntry.normalColor = svcCol
 
                         svcEntry:SetScript("OnClick", function(self)
-                            -- Direct waypoint to service location
-                            DXD:SetTarget(playerMapID, svc.x, svc.y, "waypoint", svc.name, cityData.cityName)
+                            -- Direct waypoint to service location (use city map ID, not sub-zone)
+                            DXD:SetTarget(cityMapID, svc.x, svc.y, "waypoint", svc.name, cityData.cityName)
                             if travelFrame then travelFrame:Hide() end
                         end)
 
@@ -771,9 +798,13 @@ function TravelPlannerFrame:Initialize()
     C_Timer.After(0.1, function()
         CreateTravelPlannerWindow()
 
-        -- Auto-expand city services if in a city
+        -- Auto-expand city services if in a city (check aliases too)
         local playerMapID = C_Map.GetBestMapForUnit("player")
-        if playerMapID and DXD.CityServices and DXD.CityServices[playerMapID] then
+        local initCityID = playerMapID
+        if initCityID and DXD.CityMapAliases and DXD.CityMapAliases[initCityID] then
+            initCityID = DXD.CityMapAliases[initCityID]
+        end
+        if initCityID and DXD.CityServices and DXD.CityServices[initCityID] then
             expandedContinents["_cityservices"] = true
         end
 

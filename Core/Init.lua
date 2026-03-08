@@ -326,15 +326,40 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     end
 
     -- Set native WoW waypoint so WaypointUI (or default UI) displays it
-    pcall(function()
-        if C_Map and C_Map.SetUserWaypoint and UiMapPoint then
-            local point = UiMapPoint.CreateFromCoordinates(mapID, mapX, mapY)
-            C_Map.SetUserWaypoint(point)
+    -- Coordinates must be 0-1 normalized map coords
+    local wpX = mapX
+    local wpY = mapY
+    -- If coords look like they're already 0-1, use as-is; if > 1, divide by 100
+    if wpX and wpY then
+        if wpX > 1 then wpX = wpX / 100 end
+        if wpY > 1 then wpY = wpY / 100 end
+    end
+
+    local wpOk, wpErr = pcall(function()
+        if C_Map and C_Map.SetUserWaypoint then
+            -- Try CreateFromCoordinates (standard API)
+            if UiMapPoint and UiMapPoint.CreateFromCoordinates then
+                local point = UiMapPoint.CreateFromCoordinates(mapID, wpX, wpY)
+                C_Map.SetUserWaypoint(point)
+            -- Fallback: construct the table directly
+            else
+                local point = { uiMapID = mapID, position = CreateVector2D(wpX, wpY) }
+                C_Map.SetUserWaypoint(point)
+            end
         end
+    end)
+    if not wpOk then
+        DXD:Debug("Waypoint API error: " .. tostring(wpErr))
+    end
+
+    local stOk, stErr = pcall(function()
         if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         end
     end)
+    if not stOk then
+        DXD:Debug("SuperTrack API error: " .. tostring(stErr))
+    end
 
     -- Print destination info
     local displayName = name or "Waypoint"

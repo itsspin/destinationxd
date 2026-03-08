@@ -163,9 +163,9 @@ function Widgets.CreateScrollFrame(parent, width, height)
         end
     end)
 
-    -- Enable mouse wheel scrolling
-    container:EnableMouseWheel(true)
-    container:SetScript("OnMouseWheel", function(self, delta)
+    -- Enable mouse wheel scrolling on all layers
+    -- (container, scrollFrame, AND content so child buttons don't block it)
+    local function DoScroll(delta)
         local current = scrollFrame:GetVerticalScroll()
         local range = scrollFrame:GetVerticalScrollRange()
         local step = 30
@@ -184,7 +184,6 @@ function Widgets.CreateScrollFrame(parent, width, height)
             indicator:SetVertexColor(primary.r, primary.g, primary.b, 0.3)
             indicator:Show()
 
-            -- Fade indicator after 1s
             if indicatorTimer then
                 indicatorTimer:Cancel()
             end
@@ -192,7 +191,19 @@ function Widgets.CreateScrollFrame(parent, width, height)
                 indicator:SetVertexColor(primary.r, primary.g, primary.b, 0)
             end)
         end
-    end)
+    end
+
+    container:EnableMouseWheel(true)
+    container:SetScript("OnMouseWheel", function(self, delta) DoScroll(delta) end)
+
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta) DoScroll(delta) end)
+
+    content:EnableMouseWheel(true)
+    content:SetScript("OnMouseWheel", function(self, delta) DoScroll(delta) end)
+
+    -- Expose scroll function so child frames can forward wheel events
+    container.DoScroll = DoScroll
 
     return container
 end
