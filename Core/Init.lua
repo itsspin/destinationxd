@@ -313,8 +313,12 @@ end)
 function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     local state = self.state
 
-    -- Guard against re-entrant calls from USER_WAYPOINT_UPDATED
+    -- Guard against re-entrant calls from USER_WAYPOINT_UPDATED.
+    -- The boolean blocks synchronous re-entry; the timer blocks DEFERRED
+    -- event re-entry (USER_WAYPOINT_UPDATED fires asynchronously after
+    -- C_Map.SetUserWaypoint returns).
     if self._settingTarget then return end
+    if self._settingTargetUntil and GetTime() < self._settingTargetUntil then return end
     self._settingTarget = true
 
     -- Clear any existing user waypoint first
@@ -328,19 +332,20 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     state.targetName = name
     state.targetDescription = description
 
-    -- Normalize coordinates
+    -- Normalize coordinates (some callers pass 0-100, we need 0-1)
     local wpX, wpY = mapX, mapY
     if wpX and wpX > 1 then wpX = wpX / 100 end
     if wpY and wpY > 1 then wpY = wpY / 100 end
 
-    -- Try to convert to world coordinates with the given map
+    -- ----------------------------------------------------------------
+    -- WORLD COORDINATE RESOLUTION (for arrow / distance calculations)
+    -- Try the original map first, then walk parents, then player map.
+    -- This does NOT affect where the WoW waypoint pin is placed.
+    -- ----------------------------------------------------------------
     local worldX, worldY = self.HBD:GetWorldCoordinatesFromZone(wpX, wpY, mapID)
-    local waypointMapID = mapID
-    local waypointX, waypointY = wpX, wpY
 
-    -- If HBD can't resolve this map (dungeon/instance interiors), walk up
-    -- the parent map chain until we find a waypointable outdoor zone
     if not worldX or not worldY then
+        -- Walk parent chain for world-coord resolution only
         local resolvedMap = mapID
         for attempt = 1, 5 do
             local mapInfo = resolvedMap and C_Map.GetMapInfo(resolvedMap)
@@ -348,9 +353,7 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
                 resolvedMap = mapInfo.parentMapID
                 worldX, worldY = self.HBD:GetWorldCoordinatesFromZone(0.5, 0.5, resolvedMap)
                 if worldX and worldY then
-                    waypointMapID = resolvedMap
-                    waypointX, waypointY = 0.5, 0.5
-                    self:Debug("Resolved unwaypointable map " .. mapID .. " -> parent " .. resolvedMap)
+                    self:Debug("World coords resolved via parent " .. resolvedMap)
                     break
                 end
             else
@@ -359,55 +362,59 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
         end
     end
 
-    -- Last resort: if still no world coords, use the player's current map
     if not worldX or not worldY then
         local playerMap = state.playerMapID
         if playerMap and playerMap > 0 then
             worldX, worldY = self.HBD:GetWorldCoordinatesFromZone(0.5, 0.5, playerMap)
-            if worldX and worldY then
-                waypointMapID = playerMap
-                waypointX, waypointY = 0.5, 0.5
-                self:Debug("Using player map as fallback for waypoint")
-            end
         end
     end
 
-    state.targetMapID = waypointMapID
-    state.targetMapX = waypointX
-    state.targetMapY = waypointY
+    -- Store the ORIGINAL map and coordinates (not the fallback parent)
+    state.targetMapID = mapID
+    state.targetMapX = wpX
+    state.targetMapY = wpY
 
     if worldX and worldY then
         state.targetWorldX = worldX
         state.targetWorldY = worldY
         state.hasTarget = true
     else
-        self:Debug("Failed to convert target to world coordinates (all fallbacks failed)")
+        self:Debug("Failed to convert target to world coordinates")
         state.hasTarget = false
     end
 
-    -- Set native WoW waypoint so the built-in SuperTrack arrow displays it
-    -- Must use a waypointable (outdoor zone) mapID, not a dungeon interior
-    local wpOk = pcall(function()
+    -- ----------------------------------------------------------------
+    -- WOW WAYPOINT PIN — use the ORIGINAL mapID + coords first.
+    -- Only fall back to a parent map if the original is unwaypointable.
+    -- ----------------------------------------------------------------
+    local wpSet = false
+    pcall(function()
         if C_Map and C_Map.SetUserWaypoint then
-            if UiMapPoint and UiMapPoint.CreateFromCoordinates then
-                local point = UiMapPoint.CreateFromCoordinates(waypointMapID, waypointX, waypointY)
-                C_Map.SetUserWaypoint(point)
-            else
-                local point = { uiMapID = waypointMapID, position = CreateVector2D(waypointX, waypointY) }
-                C_Map.SetUserWaypoint(point)
-            end
+            local point = UiMapPoint.CreateFromCoordinates(mapID, wpX, wpY)
+            C_Map.SetUserWaypoint(point)
+            wpSet = C_Map.HasUserWaypoint()
         end
     end)
 
-    -- If waypoint failed on the resolved map, try the player's current map
-    if not wpOk or not C_Map.HasUserWaypoint() then
-        pcall(function()
-            local playerMap = C_Map.GetBestMapForUnit("player")
-            if playerMap then
-                local point = UiMapPoint.CreateFromCoordinates(playerMap, waypointX, waypointY)
-                C_Map.SetUserWaypoint(point)
+    -- If the original map isn't waypointable, walk parents for pin only
+    if not wpSet then
+        local resolvedMap = mapID
+        for attempt = 1, 5 do
+            local mapInfo = resolvedMap and C_Map.GetMapInfo(resolvedMap)
+            if mapInfo and mapInfo.parentMapID and mapInfo.parentMapID > 0 then
+                resolvedMap = mapInfo.parentMapID
+                local ok = pcall(function()
+                    local point = UiMapPoint.CreateFromCoordinates(resolvedMap, wpX, wpY)
+                    C_Map.SetUserWaypoint(point)
+                end)
+                if ok then
+                    wpSet = pcall(function() return C_Map.HasUserWaypoint() end)
+                    if wpSet then break end
+                end
+            else
+                break
             end
-        end)
+        end
     end
 
     pcall(function()
@@ -416,7 +423,7 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
         end
     end)
 
-    -- Print destination info
+    -- Print destination info (once)
     local displayName = name or "Waypoint"
     if description then
         displayName = displayName .. " |cff888888(" .. description .. ")|r"
@@ -431,6 +438,8 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     end
 
     self._settingTarget = false
+    -- Block deferred event re-entry for 0.5 seconds
+    self._settingTargetUntil = GetTime() + 0.5
 end
 
 --- Set a target with explicit world coordinates (including Z)
