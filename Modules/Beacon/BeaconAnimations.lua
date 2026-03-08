@@ -155,7 +155,7 @@ function BeaconAnimations:UpdateIdleFade(isMoving, elapsed)
     if isMoving then
         animState.targetIdleAlpha = 1.0
     else
-        animState.targetIdleAlpha = 0.15
+        animState.targetIdleAlpha = 0.40
     end
 
     local speed = elapsed / (isMoving and 0.2 or Config.ANIMATION.ELEVATION_IDLE_FADE)

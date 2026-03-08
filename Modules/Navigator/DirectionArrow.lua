@@ -11,9 +11,6 @@ DXD:RegisterModule("DirectionArrow", DirectionArrow)
 local Utils = DXD.Utils
 local Config = DXD.Config
 
--- Update accumulator
-local updateAccum
-
 -- Arrow frames
 local arrowFrame
 local arrowTexture
@@ -101,15 +98,19 @@ end
 local function UpdateArrowRotation(elapsed)
     local state = DXD.state
     if not state.hasTarget then return end
+    if not state.targetWorldX or not state.targetWorldY then return end
+    if not state.playerX or not state.playerY then return end
 
-    -- Target bearing (world direction to target)
-    local targetBearing = state.bearing
+    -- Compute bearing EVERY FRAME directly for instant responsiveness
+    -- Don't rely on state.bearing which is updated at 10fps by ElevationTracker
+    local bearing = Utils.Bearing(state.playerX, state.playerY,
+        state.targetWorldX, state.targetWorldY)
 
-    -- Player facing direction
-    local facing = state.playerFacing
+    -- Player facing direction (updated every frame in Init.lua)
+    local facing = state.playerFacing or 0
 
     -- Relative angle: where the target is relative to where we're looking
-    local relAngle = targetBearing - facing
+    local relAngle = bearing - facing
     relAngle = Utils.NormalizeAngle(relAngle)
 
     -- Smooth rotation using frame-time-scaled lerp for consistent speed
@@ -235,9 +236,10 @@ function DirectionArrow:OnUpdate(elapsed)
         currentAlpha = math.max(currentAlpha - fadeSpeed, targetAlpha)
     end
 
-    -- Apply idle fade
-    local Anim = DXD:GetModule("BeaconAnimations")
-    local idleAlpha = Anim and Anim:GetIdleAlpha() or 1
+    -- Apply idle fade (minimum 0.5 so arrow is always clearly visible)
+    local AnimMod = DXD:GetModule("BeaconAnimations")
+    local idleAlpha = AnimMod and AnimMod:GetIdleAlpha() or 1
+    idleAlpha = math.max(0.5, idleAlpha)
 
     arrowFrame:SetAlpha(currentAlpha * idleAlpha)
 
@@ -253,7 +255,6 @@ end
 ------------------------------------------------------------------------
 
 function DirectionArrow:Initialize()
-    updateAccum = Utils.CreateAccumulator(Config.UPDATE_RATES.ARROW)
     CreateArrow()
     DXD:Debug("DirectionArrow initialized")
 end

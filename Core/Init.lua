@@ -135,11 +135,12 @@ end
 local function InitializeModules()
     -- Initialize all registered modules in order
     local initOrder = {
-        "Beacon", "ElevationTracker", "ElevationHUD", "FloorDetection",
+        "BeaconAnimations", "Beacon", "ElevationTracker", "ElevationHUD", "FloorDetection",
         "DirectionArrow", "DistanceDisplay", "ProximityManager",
         "QuestTracker", "WaypointTracker", "IntegrationBridge",
         "TravelPlanner", "PortalDatabase", "FlightPathGraph",
-        "Pinpoint", "MinimapButton", "SettingsPanel",
+        "RouteDisplay", "Pinpoint", "MinimapButton", "SettingsPanel",
+        "TravelPlannerFrame",
     }
 
     for _, name in ipairs(initOrder) do

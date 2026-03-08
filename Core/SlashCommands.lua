@@ -29,7 +29,10 @@ SlashCmdList["DESTINATIONXD"] = function(msg)
         end
 
     elseif cmd == "travel" or cmd == "tp" then
-        if DestinationXDTravelFrame then
+        local tpFrame = DXD:GetModule("TravelPlannerFrame")
+        if tpFrame then
+            tpFrame:Toggle()
+        elseif DestinationXDTravelFrame then
             if DestinationXDTravelFrame:IsShown() then
                 DestinationXDTravelFrame:Hide()
             else
