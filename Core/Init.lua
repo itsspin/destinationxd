@@ -140,7 +140,7 @@ local function InitializeModules()
         "QuestTracker", "WaypointTracker", "IntegrationBridge",
         "TravelPlanner", "PortalDatabase", "FlightPathGraph",
         "RouteDisplay", "Pinpoint", "MinimapButton", "SettingsPanel",
-        "TravelPlannerFrame",
+        "TravelPlannerFrame", "RadialMenu",
     }
 
     for _, name in ipairs(initOrder) do
@@ -304,8 +304,27 @@ end)
 
 --- Set a navigation target from map coordinates
 -- Sets both internal state AND a native WoW waypoint (for WaypointUI etc.)
+-- @param mapID the zone/map ID
+-- @param mapX normalized X (0-1)
+-- @param mapY normalized Y (0-1)
+-- @param targetType "quest", "waypoint", "corpse", "travel", "tomtom", "dungeon", "flight"
+-- @param name display name
+-- @param description optional subtitle
 function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     local state = self.state
+
+    -- Guard against re-entrant calls from USER_WAYPOINT_UPDATED
+    -- When we set C_Map.SetUserWaypoint below, it fires USER_WAYPOINT_UPDATED
+    -- which would call WaypointTracker:OnWaypointUpdated -> SetTarget again.
+    if self._settingTarget then return end
+    self._settingTarget = true
+
+    -- Clear any existing user waypoint first to avoid stale state
+    pcall(function()
+        if C_Map and C_Map.ClearUserWaypoint then
+            C_Map.ClearUserWaypoint()
+        end
+    end)
 
     state.targetMapID = mapID
     state.targetMapX = mapX
@@ -325,11 +344,9 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
         state.hasTarget = false
     end
 
-    -- Set native WoW waypoint so WaypointUI (or default UI) displays it
-    -- Coordinates must be 0-1 normalized map coords
+    -- Set native WoW waypoint so the built-in UI + SuperTrack arrow displays it
     local wpX = mapX
     local wpY = mapY
-    -- If coords look like they're already 0-1, use as-is; if > 1, divide by 100
     if wpX and wpY then
         if wpX > 1 then wpX = wpX / 100 end
         if wpY > 1 then wpY = wpY / 100 end
@@ -337,11 +354,9 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
 
     local wpOk, wpErr = pcall(function()
         if C_Map and C_Map.SetUserWaypoint then
-            -- Try CreateFromCoordinates (standard API)
             if UiMapPoint and UiMapPoint.CreateFromCoordinates then
                 local point = UiMapPoint.CreateFromCoordinates(mapID, wpX, wpY)
                 C_Map.SetUserWaypoint(point)
-            -- Fallback: construct the table directly
             else
                 local point = { uiMapID = mapID, position = CreateVector2D(wpX, wpY) }
                 C_Map.SetUserWaypoint(point)
@@ -366,7 +381,7 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     if description then
         displayName = displayName .. " |cff888888(" .. description .. ")|r"
     end
-    self:Print("Waypoint set: " .. displayName)
+    self:Print("Navigating to: " .. displayName)
 
     -- Notify all modules
     for _, mod in pairs(self.modules) do
@@ -374,6 +389,8 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
             mod:OnTargetChanged()
         end
     end
+
+    self._settingTarget = false
 end
 
 --- Set a target with explicit world coordinates (including Z)

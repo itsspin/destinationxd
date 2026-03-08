@@ -54,3 +54,4 @@ UI\Widgets.lua
 UI\MinimapButton.lua
 UI\SettingsPanel.lua
 UI\TravelPlannerFrame.lua
+UI\RadialMenu.lua

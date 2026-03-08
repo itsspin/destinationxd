@@ -112,9 +112,9 @@ DXD.ZoneData = {
     -----------------------------------------------------------------
     ["Quel'Thalas"] = {
         continent = true,
-        mapID = 2601, -- Placeholder for Midnight continent
+        mapID = 2601,
         children = {
-            ["Silvermoon City (Renewed)"]  = { mapID = 2602, faction = "Both", midnight = true },
+            ["Silvermoon City (Renewed)"]  = { mapID = 2602, faction = "Both", capital = true, midnight = true },
             ["Eversong Woods (Renewed)"]   = { mapID = 2603, faction = "Both", midnight = true },
             ["Ghostlands (Renewed)"]       = { mapID = 2604, faction = "Both", midnight = true },
             ["The Sunwell Plateau"]        = { mapID = 2605, faction = "Both", midnight = true },
@@ -122,6 +122,11 @@ DXD.ZoneData = {
             ["The Thalassian Pass"]        = { mapID = 2607, faction = "Both", midnight = true },
             ["Sunstrider Isle"]            = { mapID = 2608, faction = "Both", midnight = true },
             ["The Dead Scar"]              = { mapID = 2609, faction = "Both", midnight = true },
+            -- Midnight Dungeons
+            ["Windrunner Spire"]           = { mapID = 2610, faction = "Both", dungeon = true, midnight = true },
+            ["Magister's Terrace (Renewed)"] = { mapID = 2611, faction = "Both", dungeon = true, midnight = true },
+            ["Maisara Caverns"]            = { mapID = 2612, faction = "Both", dungeon = true, midnight = true },
+            ["Nexus Point Xenas"]          = { mapID = 2613, faction = "Both", dungeon = true, midnight = true },
         },
     },
 
@@ -152,6 +157,12 @@ DXD.ZoneData = {
             ["Halls of Lightning"]   = { mapID = 138, faction = "Both", dungeon = true },
             ["The Oculus"]           = { mapID = 142, faction = "Both", dungeon = true },
             ["Pit of Saron"]         = { mapID = 183, faction = "Both", dungeon = true },
+            ["Forge of Souls"]       = { mapID = 181, faction = "Both", dungeon = true },
+            ["Halls of Reflection"]  = { mapID = 185, faction = "Both", dungeon = true },
+            ["Utgarde Pinnacle"]     = { mapID = 136, faction = "Both", dungeon = true },
+            ["Gundrak"]              = { mapID = 153, faction = "Both", dungeon = true },
+            ["The Violet Hold"]      = { mapID = 168, faction = "Both", dungeon = true },
+            ["Trial of the Champion"] = { mapID = 172, faction = "Both", dungeon = true },
         },
     },
 
@@ -173,6 +184,14 @@ DXD.ZoneData = {
             ["Vale of Eternal Blossoms"] = { mapID = 390, faction = "Both" },
             ["Isle of Thunder"]      = { mapID = 504, faction = "Both" },
             ["Timeless Isle"]        = { mapID = 554, faction = "Both" },
+            -- Dungeons
+            ["Temple of the Jade Serpent"] = { mapID = 429, faction = "Both", dungeon = true },
+            ["Stormstout Brewery"]   = { mapID = 439, faction = "Both", dungeon = true },
+            ["Shado-Pan Monastery"]  = { mapID = 443, faction = "Both", dungeon = true },
+            ["Mogu'shan Palace"]     = { mapID = 453, faction = "Both", dungeon = true },
+            ["Gate of the Setting Sun"] = { mapID = 457, faction = "Both", dungeon = true },
+            ["Siege of Niuzao Temple"] = { mapID = 459, faction = "Both", dungeon = true },
+            ["Scholomance (MoP)"]    = { mapID = 476, faction = "Both", dungeon = true },
         },
     },
 
@@ -191,6 +210,15 @@ DXD.ZoneData = {
             ["Nagrand (Draenor)"]    = { mapID = 550, faction = "Both" },
             ["Tanaan Jungle"]        = { mapID = 534, faction = "Both" },
             ["Ashran"]               = { mapID = 588, faction = "Both" },
+            -- Dungeons
+            ["Bloodmaul Slag Mines"] = { mapID = 593, faction = "Both", dungeon = true },
+            ["Iron Docks"]           = { mapID = 595, faction = "Both", dungeon = true },
+            ["Auchindoun (Draenor)"] = { mapID = 547, faction = "Both", dungeon = true },
+            ["Skyreach"]             = { mapID = 601, faction = "Both", dungeon = true },
+            ["Grimrail Depot"]       = { mapID = 606, faction = "Both", dungeon = true },
+            ["Upper Blackrock Spire (Draenor)"] = { mapID = 616, faction = "Both", dungeon = true },
+            ["Shadowmoon Burial Grounds"] = { mapID = 574, faction = "Both", dungeon = true },
+            ["The Everbloom"]        = { mapID = 620, faction = "Both", dungeon = true },
         },
     },
 
@@ -209,6 +237,19 @@ DXD.ZoneData = {
             ["Suramar"]              = { mapID = 680, faction = "Both" },
             ["Broken Shore"]         = { mapID = 646, faction = "Both" },
             ["Argus"]                = { mapID = 905, faction = "Both" },
+            -- Dungeons
+            ["Eye of Azshara"]       = { mapID = 713, faction = "Both", dungeon = true },
+            ["Darkheart Thicket"]    = { mapID = 733, faction = "Both", dungeon = true },
+            ["Neltharion's Lair"]    = { mapID = 731, faction = "Both", dungeon = true },
+            ["Halls of Valor"]       = { mapID = 703, faction = "Both", dungeon = true },
+            ["Maw of Souls"]         = { mapID = 727, faction = "Both", dungeon = true },
+            ["Vault of the Wardens"] = { mapID = 677, faction = "Both", dungeon = true },
+            ["Black Rook Hold"]      = { mapID = 740, faction = "Both", dungeon = true },
+            ["Court of Stars"]       = { mapID = 761, faction = "Both", dungeon = true },
+            ["The Arcway"]           = { mapID = 749, faction = "Both", dungeon = true },
+            ["Cathedral of Eternal Night"] = { mapID = 900, faction = "Both", dungeon = true },
+            ["Return to Karazhan"]   = { mapID = 809, faction = "Both", dungeon = true },
+            ["Seat of the Triumvirate"] = { mapID = 945, faction = "Both", dungeon = true },
         },
     },
 
@@ -223,6 +264,11 @@ DXD.ZoneData = {
             ["Zuldazar"]             = { mapID = 862,  faction = "Horde" },
             ["Nazmir"]               = { mapID = 863,  faction = "Horde" },
             ["Vol'dun"]              = { mapID = 864,  faction = "Horde" },
+            -- Dungeons
+            ["Atal'Dazar"]           = { mapID = 934,  faction = "Both", dungeon = true },
+            ["The Underrot"]         = { mapID = 1041, faction = "Both", dungeon = true },
+            ["Temple of Sethraliss"] = { mapID = 1038, faction = "Both", dungeon = true },
+            ["Kings' Rest"]          = { mapID = 1004, faction = "Both", dungeon = true },
         },
     },
 
@@ -236,6 +282,13 @@ DXD.ZoneData = {
             ["Stormsong Valley"]     = { mapID = 942,  faction = "Alliance" },
             ["Mechagon"]             = { mapID = 1462, faction = "Both" },
             ["Nazjatar"]             = { mapID = 1355, faction = "Both" },
+            -- Dungeons
+            ["Freehold"]             = { mapID = 936,  faction = "Both", dungeon = true },
+            ["Shrine of the Storm"]  = { mapID = 1039, faction = "Both", dungeon = true },
+            ["Tol Dagor"]            = { mapID = 1002, faction = "Both", dungeon = true },
+            ["Waycrest Manor"]       = { mapID = 1015, faction = "Both", dungeon = true },
+            ["Siege of Boralus"]     = { mapID = 1162, faction = "Both", dungeon = true },
+            ["Operation: Mechagon"]  = { mapID = 1490, faction = "Both", dungeon = true },
         },
     },
 
@@ -254,6 +307,16 @@ DXD.ZoneData = {
             ["The Maw"]              = { mapID = 1543, faction = "Both" },
             ["Korthia"]              = { mapID = 1961, faction = "Both" },
             ["Zereth Mortis"]        = { mapID = 1970, faction = "Both" },
+            -- Dungeons
+            ["The Necrotic Wake"]    = { mapID = 1666, faction = "Both", dungeon = true },
+            ["Plaguefall"]           = { mapID = 1674, faction = "Both", dungeon = true },
+            ["Mists of Tirna Scithe"] = { mapID = 1669, faction = "Both", dungeon = true },
+            ["Halls of Atonement"]   = { mapID = 1663, faction = "Both", dungeon = true },
+            ["Theater of Pain"]      = { mapID = 1683, faction = "Both", dungeon = true },
+            ["De Other Side"]        = { mapID = 1680, faction = "Both", dungeon = true },
+            ["Spires of Ascension"]  = { mapID = 1693, faction = "Both", dungeon = true },
+            ["Sanguine Depths"]      = { mapID = 1675, faction = "Both", dungeon = true },
+            ["Tazavesh, the Veiled Market"] = { mapID = 1989, faction = "Both", dungeon = true },
         },
     },
 
@@ -272,6 +335,16 @@ DXD.ZoneData = {
             ["Zaralek Cavern"]       = { mapID = 2133, faction = "Both" },
             ["Emerald Dream"]        = { mapID = 2200, faction = "Both" },
             ["Forbidden Reach"]      = { mapID = 2151, faction = "Both" },
+            -- Dungeons
+            ["Ruby Life Pools"]      = { mapID = 2094, faction = "Both", dungeon = true },
+            ["The Nokhud Offensive"] = { mapID = 2093, faction = "Both", dungeon = true },
+            ["The Azure Vault"]      = { mapID = 2073, faction = "Both", dungeon = true },
+            ["Algeth'ar Academy"]    = { mapID = 2097, faction = "Both", dungeon = true },
+            ["Brackenhide Hollow"]   = { mapID = 2106, faction = "Both", dungeon = true },
+            ["Halls of Infusion"]    = { mapID = 2082, faction = "Both", dungeon = true },
+            ["Uldaman: Legacy of Tyr"] = { mapID = 2071, faction = "Both", dungeon = true },
+            ["Neltharus"]            = { mapID = 2080, faction = "Both", dungeon = true },
+            ["Dawn of the Infinite"] = { mapID = 2190, faction = "Both", dungeon = true },
         },
     },
 
@@ -287,6 +360,15 @@ DXD.ZoneData = {
             ["The Ringing Deeps"]    = { mapID = 2214, faction = "Both" },
             ["Hallowfall"]           = { mapID = 2215, faction = "Both" },
             ["Azj-Kahet"]            = { mapID = 2255, faction = "Both" },
+            -- Dungeons
+            ["The Rookery"]          = { mapID = 2315, faction = "Both", dungeon = true },
+            ["The Stonevault"]       = { mapID = 2341, faction = "Both", dungeon = true },
+            ["City of Threads"]      = { mapID = 2343, faction = "Both", dungeon = true },
+            ["Ara-Kara"]             = { mapID = 2357, faction = "Both", dungeon = true },
+            ["Darkflame Cleft"]      = { mapID = 2359, faction = "Both", dungeon = true },
+            ["Priory of the Sacred Flame"] = { mapID = 2361, faction = "Both", dungeon = true },
+            ["The Dawnbreaker"]      = { mapID = 2360, faction = "Both", dungeon = true },
+            ["Cinderbrew Meadery"]   = { mapID = 2358, faction = "Both", dungeon = true },
         },
     },
 
@@ -318,24 +400,6 @@ DXD.ZoneData = {
         },
     },
 
-    -----------------------------------------------------------------
-    -- DUNGEONS (Current Expansion - TWW)
-    -----------------------------------------------------------------
-    ["Dungeons"] = {
-        continent = true,
-        mapID = 0,
-        children = {
-            -- The War Within Dungeons
-            ["The Rookery"]          = { mapID = 2315, faction = "Both", dungeon = true },
-            ["The Stonevault"]       = { mapID = 2341, faction = "Both", dungeon = true },
-            ["City of Threads"]      = { mapID = 2343, faction = "Both", dungeon = true },
-            ["Ara-Kara"]             = { mapID = 2357, faction = "Both", dungeon = true },
-            ["Darkflame Cleft"]      = { mapID = 2359, faction = "Both", dungeon = true },
-            ["Priory of the Sacred Flame"] = { mapID = 2361, faction = "Both", dungeon = true },
-            ["The Dawnbreaker"]      = { mapID = 2360, faction = "Both", dungeon = true },
-            ["Cinderbrew Meadery"]   = { mapID = 2358, faction = "Both", dungeon = true },
-        },
-    },
 }
 
 ------------------------------------------------------------------------

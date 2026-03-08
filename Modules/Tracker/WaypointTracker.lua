@@ -17,7 +17,10 @@ local Utils = DXD.Utils
 function WaypointTracker:OnWaypointUpdated()
     if not DXD.state.initialized then return end
 
-    -- Check if user has a waypoint set
+    -- If SetTarget is currently running, this event was triggered by US
+    -- setting the waypoint programmatically. Do NOT re-process it.
+    if DXD._settingTarget then return end
+
     local hasWaypoint = C_Map.HasUserWaypoint()
     if not hasWaypoint then
         -- Waypoint was cleared
@@ -47,15 +50,13 @@ function WaypointTracker:OnWaypointUpdated()
 
     DXD:SetTarget(mapID, x, y, "waypoint", name)
 
-    -- Ensure supertracking is on for this waypoint
-    C_SuperTrack.SetSuperTrackedUserWaypoint(true)
-
     DXD:Debug("Tracking user waypoint: " .. name)
 end
 
 --- Called when super tracking changes
 function WaypointTracker:OnSuperTrackingChanged()
     if not DXD.state.initialized then return end
+    if DXD._settingTarget then return end
 
     if C_SuperTrack.IsSuperTrackingUserWaypoint() then
         self:OnWaypointUpdated()

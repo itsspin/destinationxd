@@ -123,33 +123,27 @@ local function CreateSettingsPanel()
     yOffset = CreateCheckboxSetting(content, "Auto-clear on arrival", "autoClearOnArrival", yOffset)
     yOffset = CreateSliderSetting(content, "Arrival distance", "arrivalDistance", 2, 15, 1, yOffset)
 
-    -- === BEACON ===
+    -- === NAVIGATION HUD ===
     yOffset = yOffset - 12
-    yOffset = CreateSectionHeader(content, "BEACON", yOffset)
-    yOffset = CreateSliderSetting(content, "Beacon scale", "beaconScale", 0.5, 2.5, 0.1, yOffset)
-    yOffset = CreateSliderSetting(content, "Beam opacity", "beamOpacity", 0.2, 1.0, 0.1, yOffset)
-    yOffset = CreateSliderSetting(content, "Beam width", "beamWidthScale", 0.5, 3.0, 0.25, yOffset)
-    yOffset = CreateCheckboxSetting(content, "Show through terrain", "showThroughTerrain", yOffset)
-    yOffset = CreateCheckboxSetting(content, "Show target name on beacon", "showBeaconName", yOffset)
-
-    -- === ELEVATION ===
-    yOffset = yOffset - 12
-    yOffset = CreateSectionHeader(content, "ELEVATION", yOffset)
+    yOffset = CreateSectionHeader(content, "NAVIGATION HUD", yOffset)
+    yOffset = CreateCheckboxSetting(content, "Show direction arrow", "showArrow", yOffset)
+    yOffset = CreateCheckboxSetting(content, "Show ETA", "showETA", yOffset)
+    yOffset = CreateSliderSetting(content, "Arrow/HUD scale", "arrowScale", 0.5, 2.0, 0.1, yOffset)
     yOffset = CreateCheckboxSetting(content, "Show elevation indicator", "showElevation", yOffset)
     yOffset = CreateCheckboxSetting(content, "Decomposed distance", "showDecomposedDistance", yOffset)
     yOffset = CreateSliderSetting(content, "Vertical tolerance", "verticalTolerance", 3, 20, 1, yOffset)
-
-    -- === NAVIGATOR ===
-    yOffset = yOffset - 12
-    yOffset = CreateSectionHeader(content, "NAVIGATOR", yOffset)
-    yOffset = CreateCheckboxSetting(content, "Show direction arrow", "showArrow", yOffset)
-    yOffset = CreateCheckboxSetting(content, "Show ETA", "showETA", yOffset)
-    yOffset = CreateSliderSetting(content, "Arrow scale", "arrowScale", 0.5, 2.0, 0.1, yOffset)
 
     -- === TRAVEL PLANNER ===
     yOffset = yOffset - 12
     yOffset = CreateSectionHeader(content, "TRAVEL PLANNER", yOffset)
     yOffset = CreateCheckboxSetting(content, "Consider hearthstone CD", "considerHearthstoneCooldown", yOffset)
+
+    -- === RADIAL MENU ===
+    yOffset = yOffset - 12
+    yOffset = CreateSectionHeader(content, "QUICK ACCESS", yOffset)
+    yOffset = CreateCheckboxSetting(content, "Enable radial menu", "radialMenuEnabled", yOffset)
+    yOffset = CreateDropdownSetting(content, "Hotkey", "radialMenuKey",
+        { {label = "` (Tilde)", value = "`"}, {label = "TAB", value = "TAB"}, {label = "ALT", value = "LALT"}, {label = "CTRL", value = "LCTRL"} }, yOffset)
 
     -- === INTEGRATIONS ===
     yOffset = yOffset - 12
