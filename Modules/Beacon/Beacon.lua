@@ -147,6 +147,38 @@ end
 -- POSITIONING
 ------------------------------------------------------------------------
 
+local function UpdateChevrons(screenX, screenY, beamHeight, distance, alpha, morphProgress)
+    local elevState = DXD.state.elevationState
+    local showChevrons = (elevState ~= "level")
+        and distance and distance > Config.BEACON.CLOSE_DISTANCE
+        and distance < Config.BEACON.FAR_DISTANCE
+        and morphProgress < 0.5
+
+    if not showChevrons then
+        for _, cf in ipairs(chevronFrames) do
+            cf:Hide()
+        end
+        return
+    end
+
+    local chevronChar = elevState == "above" and "\226\150\178" or "\226\150\188"  -- ▲ or ▼
+    local chevOffset = Anim:GetChevronOffset()
+    local spacing = beamHeight / (#chevronFrames + 1)
+
+    for i, cf in ipairs(chevronFrames) do
+        local yPos = screenY + spacing * i + chevOffset
+        if yPos > screenY and yPos < screenY + beamHeight then
+            cf.text:SetText(chevronChar)
+            cf:ClearAllPoints()
+            cf:SetPoint("CENTER", UIParent, "BOTTOMLEFT", screenX, yPos)
+            cf:SetAlpha(alpha * 0.6)
+            cf:Show()
+        else
+            cf:Hide()
+        end
+    end
+end
+
 local function UpdateBeamPosition(screenX, screenY, distance)
     if not screenX or not screenY then
         if beamFrame then beamFrame:Hide() end
@@ -164,6 +196,14 @@ local function UpdateBeamPosition(screenX, screenY, distance)
     -- Apply idle fade
     local idleAlpha = Anim:GetIdleAlpha()
     local finalAlpha = pulseAlpha * idleAlpha
+
+    -- Distance-based dimming: beam fades at long range so it looks
+    -- like it's behind terrain/buildings rather than on top of them
+    local distDim = 1
+    if distance and distance > 80 then
+        distDim = Utils.Remap(distance, 80, 300, 1.0, 0.3)
+    end
+    finalAlpha = finalAlpha * distDim
 
     -- Fade-in/out transition
     local fadeDelta = targetFadeAlpha - fadeAlpha
@@ -245,38 +285,6 @@ local function UpdateBeamPosition(screenX, screenY, distance)
     if arrivalComplete then
         Beacon:Hide()
         DXD:Debug("Arrival animation complete, beacon hidden")
-    end
-end
-
-local function UpdateChevrons(screenX, screenY, beamHeight, distance, alpha, morphProgress)
-    local elevState = DXD.state.elevationState
-    local showChevrons = (elevState ~= "level")
-        and distance and distance > Config.BEACON.CLOSE_DISTANCE
-        and distance < Config.BEACON.FAR_DISTANCE
-        and morphProgress < 0.5
-
-    if not showChevrons then
-        for _, cf in ipairs(chevronFrames) do
-            cf:Hide()
-        end
-        return
-    end
-
-    local chevronChar = elevState == "above" and "\226\150\178" or "\226\150\188"  -- ▲ or ▼
-    local chevOffset = Anim:GetChevronOffset()
-    local spacing = beamHeight / (#chevronFrames + 1)
-
-    for i, cf in ipairs(chevronFrames) do
-        local yPos = screenY + spacing * i + chevOffset
-        if yPos > screenY and yPos < screenY + beamHeight then
-            cf.text:SetText(chevronChar)
-            cf:ClearAllPoints()
-            cf:SetPoint("CENTER", UIParent, "BOTTOMLEFT", screenX, yPos)
-            cf:SetAlpha(alpha * 0.6)
-            cf:Show()
-        else
-            cf:Hide()
-        end
     end
 end
 
