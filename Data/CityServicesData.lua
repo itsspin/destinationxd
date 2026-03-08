@@ -133,74 +133,81 @@ DXD.CityServices = {
 
 ------------------------------------------------------------------------
 -- MYTHIC+ DUNGEONS (Season 1 - Midnight Expansion)
--- Each entry has entrance coordinates for beacon navigation
+-- Correct rotation: 4 new Midnight + 4 returning legacy
+-- Legacy dungeons accessed via Timeways portal in Silvermoon (53.3, 66.1)
 ------------------------------------------------------------------------
 DXD.MythicPlusDungeons = {
     season = "Midnight Season 1",
     dungeons = {
+        -- === NEW MIDNIGHT DUNGEONS ===
         {
-            name = "Priory of the Sacred Flame",
-            mapID = 2361,
-            entranceMapID = 2215,  -- Hallowfall
-            entranceX = 0.596,
-            entranceY = 0.576,
+            name = "Windrunner Spire",
+            entranceMapID = 2603,  -- Eversong Woods (Renewed)
+            entranceX = 0.355,
+            entranceY = 0.788,
             keyLevel = "M+",
+            new = true,
         },
         {
-            name = "The Rookery",
-            mapID = 2315,
-            entranceMapID = 2248,  -- Isle of Dorn
-            entranceX = 0.551,
-            entranceY = 0.407,
+            name = "Magister's Terrace",
+            entranceMapID = 2606,  -- Isle of Quel'Danas
+            entranceX = 0.617,
+            entranceY = 0.307,
             keyLevel = "M+",
+            new = true,
         },
         {
-            name = "The Stonevault",
-            mapID = 2341,
-            entranceMapID = 2214,  -- The Ringing Deeps
-            entranceX = 0.337,
-            entranceY = 0.658,
+            name = "Maisara Caverns",
+            entranceMapID = 2603,  -- Eversong Woods (Renewed) / Zul'Aman area
+            entranceX = 0.439,
+            entranceY = 0.397,
             keyLevel = "M+",
+            new = true,
         },
         {
-            name = "City of Threads",
-            mapID = 2343,
-            entranceMapID = 2255,  -- Azj-Kahet
-            entranceX = 0.315,
-            entranceY = 0.668,
+            name = "Nexus Point Xenas",
+            entranceMapID = 2603,  -- Voidstorm / Eversong area
+            entranceX = 0.650,
+            entranceY = 0.617,
             keyLevel = "M+",
+            new = true,
+        },
+        -- === RETURNING LEGACY DUNGEONS (via Timeways portal in Silvermoon 53.3, 66.1) ===
+        {
+            name = "Algeth'ar Academy",
+            entranceMapID = 2602,  -- Access via Timeways in Silvermoon
+            entranceX = 0.533,
+            entranceY = 0.661,
+            keyLevel = "M+",
+            legacy = true,
+            timewaysAccess = true,
         },
         {
-            name = "Ara-Kara, City of Echoes",
-            mapID = 2357,
-            entranceMapID = 2255,  -- Azj-Kahet
-            entranceX = 0.370,
-            entranceY = 0.570,
+            name = "Seat of the Triumvirate",
+            entranceMapID = 2602,  -- Access via Timeways in Silvermoon
+            entranceX = 0.533,
+            entranceY = 0.661,
             keyLevel = "M+",
+            legacy = true,
+            timewaysAccess = true,
         },
         {
-            name = "Darkflame Cleft",
-            mapID = 2359,
-            entranceMapID = 2214,  -- The Ringing Deeps
-            entranceX = 0.486,
-            entranceY = 0.283,
+            name = "Skyreach",
+            entranceMapID = 2602,  -- Access via Timeways in Silvermoon
+            entranceX = 0.533,
+            entranceY = 0.661,
             keyLevel = "M+",
+            legacy = true,
+            timewaysAccess = true,
         },
         {
-            name = "The Dawnbreaker",
-            mapID = 2360,
-            entranceMapID = 2215,  -- Hallowfall
-            entranceX = 0.475,
-            entranceY = 0.328,
+            name = "Pit of Saron",
+            entranceMapID = 2602,  -- Access via Timeways in Silvermoon
+            entranceX = 0.533,
+            entranceY = 0.661,
             keyLevel = "M+",
-        },
-        {
-            name = "Cinderbrew Meadery",
-            mapID = 2358,
-            entranceMapID = 2248,  -- Isle of Dorn
-            entranceX = 0.732,
-            entranceY = 0.446,
-            keyLevel = "M+",
+            legacy = true,
+            timewaysAccess = true,
         },
     },
 }
