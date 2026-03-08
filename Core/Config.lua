@@ -95,13 +95,13 @@ Config.BEACON = {
     CLOSE_DISTANCE    = 5,
 
     -- Pulse opacity range
-    PULSE_MIN_ALPHA   = 0.70,
-    PULSE_MAX_ALPHA   = 0.90,
+    PULSE_MIN_ALPHA   = 0.75,
+    PULSE_MAX_ALPHA   = 0.95,
 
     -- Beam visual
-    BEAM_WIDTH_BASE   = 3,    -- pixels
+    BEAM_WIDTH_BASE   = 4,    -- pixels (core shaft)
     BEAM_HEIGHT_BASE  = 0,    -- 0 = extend to top of screen
-    GLOW_WIDTH_BASE   = 12,   -- pixels
+    GLOW_WIDTH_BASE   = 16,   -- pixels (inner glow width)
 
     -- Close-range firefly bob
     BOB_AMPLITUDE     = 3,    -- pixels
@@ -121,10 +121,10 @@ Config.ELEVATION = {
 -- NAVIGATOR SETTINGS
 ------------------------------------------------------------------------
 Config.NAVIGATOR = {
-    ARROW_SIZE        = 28,
-    ARROW_ALPHA       = 0.70,
+    ARROW_SIZE        = 32,
+    ARROW_ALPHA       = 0.80,
     MAX_PITCH_DEGREES = 30,
-    BEHIND_ALPHA_BUMP = 0.90,
+    BEHIND_ALPHA_BUMP = 0.95,
 }
 
 ------------------------------------------------------------------------

@@ -27,12 +27,17 @@ local function CreateMinimapButton()
         OnClick = function(self, button)
             if button == "LeftButton" then
                 -- Toggle Travel Planner
-                if DestinationXDTravelFrame then
+                local tpFrame = DXD:GetModule("TravelPlannerFrame")
+                if tpFrame then
+                    tpFrame:Toggle()
+                elseif DestinationXDTravelFrame then
                     if DestinationXDTravelFrame:IsShown() then
                         DestinationXDTravelFrame:Hide()
                     else
                         DestinationXDTravelFrame:Show()
                     end
+                else
+                    DXD:Print("Travel Planner is loading...")
                 end
             elseif button == "RightButton" then
                 -- Quick options menu
