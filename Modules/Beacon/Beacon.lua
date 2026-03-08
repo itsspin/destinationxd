@@ -85,7 +85,17 @@ local function CreateBeaconFrames()
     beamFrame.gradient:SetTexture("Interface\\BUTTONS\\WHITE8X8")
     beamFrame.gradient:SetBlendMode("MOD")
     beamFrame.gradient:SetPoint("BOTTOM")
-    beamFrame.gradient:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(0, 0, 0, 0))
+    -- SetGradient signature changed in 10.x+: (orientation, minColor, maxColor)
+    -- Both CreateColor forms work; the 2-arg CreateColor form is 10.x+
+    local ok = pcall(function()
+        beamFrame.gradient:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(0, 0, 0, 0))
+    end)
+    if not ok then
+        -- Fallback for older API: SetGradientAlpha(orientation, r1,g1,b1,a1, r2,g2,b2,a2)
+        pcall(function()
+            beamFrame.gradient:SetGradientAlpha("VERTICAL", 1, 1, 1, 1, 0, 0, 0, 0)
+        end)
+    end
 
     -- Beam base glow (soft circle at the base of beam)
     beamFrame.baseGlow = beamFrame:CreateTexture(nil, "ARTWORK", nil, -1)

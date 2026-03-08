@@ -48,27 +48,35 @@ end
 --- Try multiple methods to find quest location
 local function FindQuestPosition(questID, mapID)
     -- Method 1: QuestPOI waypoint
-    if QuestHasPOIInfo and QuestHasPOIInfo(questID) then
-        local x, y = C_QuestLog.GetNextWaypointForMap(questID, mapID)
-        if x and y and (x > 0 or y > 0) then
-            return mapID, x, y
+    if QuestHasPOIInfo then
+        local hasPOI = false
+        pcall(function() hasPOI = QuestHasPOIInfo(questID) end)
+        if hasPOI and C_QuestLog.GetNextWaypointForMap then
+            local ok, x, y = pcall(C_QuestLog.GetNextWaypointForMap, questID, mapID)
+            if ok and x and y and (x > 0 or y > 0) then
+                return mapID, x, y
+            end
         end
     end
 
     -- Method 2: C_QuestLog.GetNextWaypoint
     if C_QuestLog.GetNextWaypoint then
-        local wpMapID, wpX, wpY = C_QuestLog.GetNextWaypoint(questID)
-        if wpMapID and wpX and wpY and (wpX > 0 or wpY > 0) then
+        local ok, wpMapID, wpX, wpY = pcall(C_QuestLog.GetNextWaypoint, questID)
+        if ok and wpMapID and wpX and wpY and (wpX > 0 or wpY > 0) then
             return wpMapID, wpX, wpY
         end
     end
 
     -- Method 3: Try quest-specific map
-    local questMapID = GetQuestUiMapID and GetQuestUiMapID(questID)
+    local questMapID
+    if GetQuestUiMapID then
+        local ok, result = pcall(GetQuestUiMapID, questID)
+        if ok then questMapID = result end
+    end
     if questMapID and questMapID > 0 and questMapID ~= mapID then
-        if QuestHasPOIInfo and QuestHasPOIInfo(questID) then
-            local x, y = C_QuestLog.GetNextWaypointForMap(questID, questMapID)
-            if x and y and (x > 0 or y > 0) then
+        if QuestHasPOIInfo and C_QuestLog.GetNextWaypointForMap then
+            local ok, x, y = pcall(C_QuestLog.GetNextWaypointForMap, questID, questMapID)
+            if ok and x and y and (x > 0 or y > 0) then
                 return questMapID, x, y
             end
         end
@@ -78,9 +86,9 @@ local function FindQuestPosition(questID, mapID)
 
     -- Method 4: Try task quest API (world quests, bonus objectives)
     if C_TaskQuest and C_TaskQuest.GetQuestLocation then
-        local taskMapID, x, y = C_TaskQuest.GetQuestLocation(questID)
-        if taskMapID and x and y then
-            return taskMapID, x, y
+        local ok, x, y = pcall(C_TaskQuest.GetQuestLocation, questID, mapID)
+        if ok and x and y and (x > 0 or y > 0) then
+            return mapID, x, y
         end
     end
 
@@ -191,12 +199,15 @@ end
 
 function QuestTracker:TrackCorpse()
     if not isTrackingCorpse then return end
+    if not C_DeathInfo or not C_DeathInfo.GetCorpseMapPosition then return end
 
-    local corpseMapID = C_DeathInfo.GetCorpseMapPosition(C_Map.GetBestMapForUnit("player"))
-    if corpseMapID then
-        local x, y = corpseMapID:GetXY()
+    local mapID = C_Map.GetBestMapForUnit("player")
+    if not mapID then return end
+
+    local ok, corpsePos = pcall(C_DeathInfo.GetCorpseMapPosition, mapID)
+    if ok and corpsePos then
+        local x, y = corpsePos:GetXY()
         if x and y and (x > 0 or y > 0) then
-            local mapID = C_Map.GetBestMapForUnit("player")
             DXD:SetTarget(mapID, x, y, "corpse", "Your Corpse", "Return to your body")
         end
     end
