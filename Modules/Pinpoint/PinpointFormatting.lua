@@ -64,7 +64,7 @@ function PinpointFormatting:GetInfoLine()
     local etaStr = eta and (" " .. Utils.FormatETA(eta)) or ""
 
     if state.elevationState ~= "level" then
-        local chevron = state.elevationState == "above" and "\226\150\178" or "\226\150\188"
+        local chevron = state.elevationState == "above" and "|cffff9933^|r" or "|cff3399ffv|r"
         local vertDist = Utils.FormatDistance(state.distanceVertical)
         return dist .. "  " .. chevron .. vertDist .. etaStr
     end

@@ -360,7 +360,7 @@ function Widgets.CreateDropdown(parent, text, dbKey, options, onChange)
         end
         local nextIdx = (currentIdx % #options) + 1
         DXD.db[dbKey] = options[nextIdx].value
-        valueBtn.label:SetText(options[nextIdx].label .. " \226\150\190")  -- ▾
+        valueBtn.label:SetText(options[nextIdx].label .. " v")  -- ▾
         if onChange then onChange(options[nextIdx].value) end
     end)
     valueBtn:SetPoint("LEFT", label, "RIGHT", 0, 0)
@@ -369,7 +369,7 @@ function Widgets.CreateDropdown(parent, text, dbKey, options, onChange)
     local current = DXD.db[dbKey]
     for _, opt in ipairs(options) do
         if opt.value == current then
-            valueBtn.label:SetText(opt.label .. " \226\150\190")  -- ▾
+            valueBtn.label:SetText(opt.label .. " v")  -- ▾
             break
         end
     end
