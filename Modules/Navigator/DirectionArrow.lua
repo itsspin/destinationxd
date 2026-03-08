@@ -112,8 +112,8 @@ local function UpdateArrowRotation(elapsed)
     local relAngle = targetBearing - facing
     relAngle = Utils.NormalizeAngle(relAngle)
 
-    -- Smooth rotation using lerp
-    local lerpFactor = Config.ANIMATION.ARROW_LERP_FACTOR
+    -- Smooth rotation using frame-time-scaled lerp for consistent speed
+    local lerpFactor = 1 - math.pow(1 - Config.ANIMATION.ARROW_LERP_FACTOR, elapsed * 60)
     local angleDelta = Utils.AngleDelta(currentRotation, relAngle)
     currentRotation = currentRotation + angleDelta * lerpFactor
     currentRotation = Utils.NormalizeAngle(currentRotation)
@@ -143,8 +143,9 @@ local function UpdateArrowRotation(elapsed)
         targetPitch = Utils.Clamp(elevDelta / 50, -1, 0) * maxPitch
     end
 
-    -- Smooth pitch
-    currentPitch = currentPitch + (targetPitch - currentPitch) * Config.ANIMATION.ARROW_PITCH_LERP
+    -- Smooth pitch (frame-time-scaled)
+    local pitchLerp = 1 - math.pow(1 - Config.ANIMATION.ARROW_PITCH_LERP, elapsed * 60)
+    currentPitch = currentPitch + (targetPitch - currentPitch) * pitchLerp
 
     -- Apply pitch by scaling the vertical axis (WoW doesn't support true 3D rotation on textures)
     -- We simulate pitch by squishing the texture vertically
@@ -210,13 +211,12 @@ end
 
 function DirectionArrow:OnUpdate(elapsed)
     if not arrowFrame then return end
-    if not updateAccum then return end
     if not DXD.db.showArrow then
         arrowFrame:Hide()
         return
     end
 
-    if not updateAccum:ShouldUpdate(elapsed) then return end
+    -- No throttling - run every frame for responsive arrow
 
     if DXD.state.hasTarget then
         targetAlpha = 1

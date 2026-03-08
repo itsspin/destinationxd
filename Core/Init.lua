@@ -200,10 +200,8 @@ local function OnUpdate(self, elapsed)
     if not DXD.state.initialized then return end
     if not DXD.db.enabled then return end
 
-    -- Update player position at 20fps
-    if posAccum:ShouldUpdate(elapsed) then
-        UpdatePlayerPosition()
-    end
+    -- Update player position every frame for smooth visuals
+    UpdatePlayerPosition()
 
     -- Update speed at 5fps
     if speedAccum:ShouldUpdate(elapsed) then

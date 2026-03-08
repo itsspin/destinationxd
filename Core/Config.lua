@@ -58,8 +58,8 @@ Config.ANIMATION = {
     BEACON_FADE_OUT       = 0.8,
     BEACON_ARRIVE_BLOOM   = 0.5,
 
-    ARROW_LERP_FACTOR     = 0.12,
-    ARROW_PITCH_LERP      = 0.08,
+    ARROW_LERP_FACTOR     = 0.35,
+    ARROW_PITCH_LERP      = 0.25,
 
     ELEVATION_FADE        = 0.3,
     ELEVATION_IDLE_FADE   = 1.5,
@@ -76,13 +76,13 @@ Config.ANIMATION = {
 -- UPDATE FREQUENCIES (staggered for performance)
 ------------------------------------------------------------------------
 Config.UPDATE_RATES = {
-    POSITION      = 0.05,   -- 20 fps
-    BEACON        = 0.05,   -- 20 fps
-    ELEVATION     = 0.10,   -- 10 fps
-    DISTANCE      = 0.10,   -- 10 fps
-    ARROW         = 0.05,   -- 20 fps
-    OBSTRUCTION   = 0.50,   -- 2 fps
-    SPEED         = 0.20,   -- 5 fps
+    POSITION      = 0,       -- every frame
+    BEACON        = 0,       -- every frame (smooth beam)
+    ELEVATION     = 0.10,    -- 10 fps
+    DISTANCE      = 0.10,    -- 10 fps
+    ARROW         = 0,       -- every frame (smooth arrow)
+    OBSTRUCTION   = 0.50,    -- 2 fps
+    SPEED         = 0.20,    -- 5 fps
 }
 
 ------------------------------------------------------------------------
@@ -100,7 +100,7 @@ Config.BEACON = {
 
     -- Beam visual
     BEAM_WIDTH_BASE   = 3,    -- pixels
-    BEAM_HEIGHT_BASE  = 300,  -- pixels at max
+    BEAM_HEIGHT_BASE  = 0,    -- 0 = extend to top of screen
     GLOW_WIDTH_BASE   = 12,   -- pixels
 
     -- Close-range firefly bob
@@ -164,7 +164,7 @@ Config.DEFAULTS = {
     -- Beacon
     beamStyle = "modern",   -- "modern", "classic", "minimal"
     beamOpacity = 0.80,
-    showThroughTerrain = true,
+    showThroughTerrain = false,
 
     -- Elevation
     showElevation = true,

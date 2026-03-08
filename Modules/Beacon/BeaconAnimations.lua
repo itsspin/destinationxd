@@ -175,29 +175,33 @@ end
 -- BEAM HEIGHT SCALING
 ------------------------------------------------------------------------
 
---- Calculate beam height based on distance
+--- Calculate beam height based on distance and screen position
 -- @param distance yards to target
--- @return height in pixels
-function BeaconAnimations:GetBeamHeight(distance)
+-- @param screenY base Y position on screen (nil = use full screen height)
+-- @return height in pixels (extends from screenY to top of screen)
+function BeaconAnimations:GetBeamHeight(distance, screenY)
     local cfg = Config.BEACON
 
     if not distance or distance < cfg.CLOSE_DISTANCE then
         return 0
     end
 
-    -- Beam height grows as you get farther, with perspective scaling
-    local maxHeight = cfg.BEAM_HEIGHT_BASE
+    -- Beam extends from the base position to the top of the screen
+    local screenHeight = GetScreenHeight()
+    local baseY = screenY or (screenHeight * 0.35)
+    local fullHeight = screenHeight - baseY
+
+    if fullHeight < 10 then return 0 end
+
     if distance > cfg.FAR_DISTANCE then
-        -- Far: full height, scaled by perspective (1/distance)
-        return maxHeight * (cfg.FAR_DISTANCE / distance)
+        return fullHeight
     elseif distance > cfg.MEDIUM_DISTANCE then
-        -- Medium: proportional height
-        local t = Utils.Remap(distance, cfg.MEDIUM_DISTANCE, cfg.FAR_DISTANCE, 0.4, 1.0)
-        return maxHeight * t
+        local t = Utils.Remap(distance, cfg.MEDIUM_DISTANCE, cfg.FAR_DISTANCE, 0.5, 1.0)
+        return fullHeight * t
     else
-        -- Close: shrinking beam
-        local t = Utils.Remap(distance, cfg.CLOSE_DISTANCE, cfg.MEDIUM_DISTANCE, 0, 0.4)
-        return maxHeight * t
+        -- Close: shrinking beam before morphing to firefly
+        local t = Utils.Remap(distance, cfg.CLOSE_DISTANCE, cfg.MEDIUM_DISTANCE, 0, 0.5)
+        return fullHeight * t
     end
 end
 
