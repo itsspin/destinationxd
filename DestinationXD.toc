@@ -1,0 +1,55 @@
+## Interface: 120000
+## Title: DestinationXD
+## Notes: You'll actually get there. 3D-aware navigation with elevation tracking, smart routing, and stunning visuals.
+## Author: Spacebutt
+## Version: 1.0.0
+## SavedVariables: DestinationXDDB
+## IconTexture: Interface\AddOns\DestinationXD\Media\icon
+## X-Category: Map & Minimap
+## X-Website: https://github.com/itsspin/DestinationXD
+
+# Libraries
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\HereBeDragons\HereBeDragons-2.0.lua
+Libs\HereBeDragons\HereBeDragons-Pins-2.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+
+# Core
+Core\Utils.lua
+Core\Config.lua
+Core\Init.lua
+Core\SlashCommands.lua
+
+# Data
+Data\ZoneData.lua
+Data\PortalData.lua
+Data\FloorData.lua
+Data\MidnightZones.lua
+
+# Modules
+Modules\Beacon\BeaconPool.lua
+Modules\Beacon\BeaconAnimations.lua
+Modules\Beacon\Beacon.lua
+Modules\Elevation\FloorDetection.lua
+Modules\Elevation\ElevationTracker.lua
+Modules\Elevation\ElevationHUD.lua
+Modules\Navigator\DirectionArrow.lua
+Modules\Navigator\DistanceDisplay.lua
+Modules\Navigator\ProximityManager.lua
+Modules\Tracker\QuestTracker.lua
+Modules\Tracker\WaypointTracker.lua
+Modules\Tracker\IntegrationBridge.lua
+Modules\TravelPlanner\TravelPlanner.lua
+Modules\TravelPlanner\PortalDatabase.lua
+Modules\TravelPlanner\FlightPathGraph.lua
+Modules\TravelPlanner\RouteDisplay.lua
+Modules\Pinpoint\PinpointFormatting.lua
+Modules\Pinpoint\Pinpoint.lua
+
+# UI
+UI\Widgets.lua
+UI\MinimapButton.lua
+UI\SettingsPanel.lua
+UI\TravelPlannerFrame.lua
