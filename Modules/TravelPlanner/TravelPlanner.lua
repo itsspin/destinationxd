@@ -372,8 +372,22 @@ function TravelPlanner:NavigateToStep(stepIndex)
             DXD:SetTarget(step.toMapID, 0.5, 0.5, "travel", step.name, stepDesc)
         end
     elseif step.method == METHOD.HEARTHSTONE then
-        -- Hearthstone: just show the message, no beacon needed
-        DXD:Print(stepDesc .. ": Use your " .. step.name)
+        -- Hearthstone: show on-screen instruction via the HUD
+        -- Set a synthetic target so the DirectionArrow / RouteDisplay shows
+        local hsDestMap = step.toMapID
+        if hsDestMap then
+            DXD:SetTarget(hsDestMap, 0.5, 0.5, "travel", step.name, stepDesc .. " - Use now!")
+        else
+            -- No destination map, still display via state so HUD shows
+            DXD.state.targetName = step.name
+            DXD.state.targetDescription = stepDesc .. " - Use now!"
+            DXD.state.targetType = "travel"
+            DXD.state.hasTarget = true
+            for _, mod in pairs(DXD.modules) do
+                if mod.OnTargetChanged then mod:OnTargetChanged() end
+            end
+        end
+
         -- Auto-advance after cast time
         C_Timer.After(Config.TRAVEL.HS_CAST_TIME + 2, function()
             if currentRoute and currentStep == stepIndex then

@@ -17,9 +17,12 @@ local Utils = DXD.Utils
 function WaypointTracker:OnWaypointUpdated()
     if not DXD.state.initialized then return end
 
-    -- If SetTarget is currently running, this event was triggered by US
-    -- setting the waypoint programmatically. Do NOT re-process it.
+    -- If SetTarget is currently running or recently finished, this event
+    -- was triggered by US setting the waypoint programmatically.
+    -- The timer guard catches the deferred async event that fires AFTER
+    -- SetTarget returns (boolean flag is already cleared by then).
     if DXD._settingTarget then return end
+    if DXD._settingTargetUntil and GetTime() < DXD._settingTargetUntil then return end
 
     local hasWaypoint = C_Map.HasUserWaypoint()
     if not hasWaypoint then
@@ -57,6 +60,7 @@ end
 function WaypointTracker:OnSuperTrackingChanged()
     if not DXD.state.initialized then return end
     if DXD._settingTarget then return end
+    if DXD._settingTargetUntil and GetTime() < DXD._settingTargetUntil then return end
 
     if C_SuperTrack.IsSuperTrackingUserWaypoint() then
         self:OnWaypointUpdated()

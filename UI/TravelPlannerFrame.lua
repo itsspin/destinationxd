@@ -322,27 +322,9 @@ PopulateZoneList = function()
     -- CITY SERVICES (Guard mode - prominent when in a city)
     -- ============================================================
     local serviceColor = { r = 0.50, g = 0.85, b = 1.0, a = 0.80 }
-    local playerMapID = C_Map.GetBestMapForUnit("player")
 
-    -- Resolve sub-zone aliases to parent city map ID
-    local cityMapID = playerMapID
-    if cityMapID and DXD.CityMapAliases and DXD.CityMapAliases[cityMapID] then
-        cityMapID = DXD.CityMapAliases[cityMapID]
-    end
-    -- Also walk up the parent map chain if no direct match
-    if cityMapID and DXD.CityServices and not DXD.CityServices[cityMapID] then
-        local parentInfo = cityMapID and C_Map.GetMapInfo(cityMapID)
-        if parentInfo and parentInfo.parentMapID and parentInfo.parentMapID > 0 then
-            local parentID = parentInfo.parentMapID
-            if DXD.CityServices[parentID] then
-                cityMapID = parentID
-            elseif DXD.CityMapAliases and DXD.CityMapAliases[parentID] then
-                cityMapID = DXD.CityMapAliases[parentID]
-            end
-        end
-    end
-
-    local cityData = cityMapID and DXD.CityServices and DXD.CityServices[cityMapID]
+    -- Use the shared robust city resolver (alias + multi-level parent walk)
+    local cityMapID, cityData = DXD:ResolveCityMapID()
 
     if cityData then
         local hasMatchingServices = false
@@ -816,24 +798,9 @@ function TravelPlannerFrame:Initialize()
     C_Timer.After(0.1, function()
         CreateTravelPlannerWindow()
 
-        -- Auto-expand city services if in a city (check aliases + parent maps)
-        local playerMapID = C_Map.GetBestMapForUnit("player")
-        local initCityID = playerMapID
-        if initCityID and DXD.CityMapAliases and DXD.CityMapAliases[initCityID] then
-            initCityID = DXD.CityMapAliases[initCityID]
-        end
-        if initCityID and DXD.CityServices and not DXD.CityServices[initCityID] then
-            local parentInfo = initCityID and C_Map.GetMapInfo(initCityID)
-            if parentInfo and parentInfo.parentMapID and parentInfo.parentMapID > 0 then
-                local parentID = parentInfo.parentMapID
-                if DXD.CityServices[parentID] then
-                    initCityID = parentID
-                elseif DXD.CityMapAliases and DXD.CityMapAliases[parentID] then
-                    initCityID = DXD.CityMapAliases[parentID]
-                end
-            end
-        end
-        if initCityID and DXD.CityServices and DXD.CityServices[initCityID] then
+        -- Auto-expand city services if in a city
+        local _, initCityData = DXD:ResolveCityMapID()
+        if initCityData then
             expandedContinents["_cityservices"] = true
         end
 
