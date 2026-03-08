@@ -230,10 +230,17 @@ DXD.CityServices = {
 -- This maps sub-zone IDs to their parent city so services still display.
 ------------------------------------------------------------------------
 DXD.CityMapAliases = {
-    -- Silvermoon sub-zones (Midnight)
+    -- Silvermoon (Midnight) - ALL possible sub-floor/sub-zone/parent maps
+    -- WoW may return any of these when the player is inside the city
+    [2601] = 2602,  -- Quel'Thalas continent map -> Silvermoon
     [2603] = 2602,  -- Eversong Woods (Renewed) -> Silvermoon
-    [2604] = 2602,  -- Ghostlands (Renewed) -> Silvermoon (if near city)
+    [2604] = 2602,  -- Ghostlands (Renewed) -> Silvermoon
+    [2605] = 2602,  -- Sunwell Plateau -> Silvermoon
     [2606] = 2602,  -- Isle of Quel'Danas -> Silvermoon
+    [2607] = 2602,  -- Thalassian Pass -> Silvermoon
+    [2608] = 2602,  -- Sunstrider Isle -> Silvermoon
+    [2609] = 2602,  -- The Dead Scar -> Silvermoon
+    [110]  = 2602,  -- Old Silvermoon City -> Renewed Silvermoon
 
     -- Stormwind sub-zones
     [1453] = 84,    -- Stormwind sub-map
@@ -255,6 +262,15 @@ DXD.CityMapAliases = {
 
     -- Boralus sub-zones
     [1162] = 1161,  -- Boralus sub-map
+
+    -- Valdrakken sub-zones
+    [2113] = 2112,  -- Valdrakken interior
+    [2114] = 2112,  -- Valdrakken sub-floor
+
+    -- Dazar'alor sub-zones
+    [1163] = 1165,  -- Dazar'alor interior
+    [1164] = 1165,  -- Dazar'alor floor
+    [1352] = 1165,  -- Dazar'alor floor 2
 }
 
 ------------------------------------------------------------------------

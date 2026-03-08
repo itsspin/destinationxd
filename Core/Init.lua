@@ -314,67 +314,107 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     local state = self.state
 
     -- Guard against re-entrant calls from USER_WAYPOINT_UPDATED
-    -- When we set C_Map.SetUserWaypoint below, it fires USER_WAYPOINT_UPDATED
-    -- which would call WaypointTracker:OnWaypointUpdated -> SetTarget again.
     if self._settingTarget then return end
     self._settingTarget = true
 
-    -- Clear any existing user waypoint first to avoid stale state
+    -- Clear any existing user waypoint first
     pcall(function()
         if C_Map and C_Map.ClearUserWaypoint then
             C_Map.ClearUserWaypoint()
         end
     end)
 
-    state.targetMapID = mapID
-    state.targetMapX = mapX
-    state.targetMapY = mapY
     state.targetType = targetType or "waypoint"
     state.targetName = name
     state.targetDescription = description
 
-    -- Convert to world coordinates
-    local worldX, worldY = self.HBD:GetWorldCoordinatesFromZone(mapX, mapY, mapID)
+    -- Normalize coordinates
+    local wpX, wpY = mapX, mapY
+    if wpX and wpX > 1 then wpX = wpX / 100 end
+    if wpY and wpY > 1 then wpY = wpY / 100 end
+
+    -- Try to convert to world coordinates with the given map
+    local worldX, worldY = self.HBD:GetWorldCoordinatesFromZone(wpX, wpY, mapID)
+    local waypointMapID = mapID
+    local waypointX, waypointY = wpX, wpY
+
+    -- If HBD can't resolve this map (dungeon/instance interiors), walk up
+    -- the parent map chain until we find a waypointable outdoor zone
+    if not worldX or not worldY then
+        local resolvedMap = mapID
+        for attempt = 1, 5 do
+            local mapInfo = resolvedMap and C_Map.GetMapInfo(resolvedMap)
+            if mapInfo and mapInfo.parentMapID and mapInfo.parentMapID > 0 then
+                resolvedMap = mapInfo.parentMapID
+                worldX, worldY = self.HBD:GetWorldCoordinatesFromZone(0.5, 0.5, resolvedMap)
+                if worldX and worldY then
+                    waypointMapID = resolvedMap
+                    waypointX, waypointY = 0.5, 0.5
+                    self:Debug("Resolved unwaypointable map " .. mapID .. " -> parent " .. resolvedMap)
+                    break
+                end
+            else
+                break
+            end
+        end
+    end
+
+    -- Last resort: if still no world coords, use the player's current map
+    if not worldX or not worldY then
+        local playerMap = state.playerMapID
+        if playerMap and playerMap > 0 then
+            worldX, worldY = self.HBD:GetWorldCoordinatesFromZone(0.5, 0.5, playerMap)
+            if worldX and worldY then
+                waypointMapID = playerMap
+                waypointX, waypointY = 0.5, 0.5
+                self:Debug("Using player map as fallback for waypoint")
+            end
+        end
+    end
+
+    state.targetMapID = waypointMapID
+    state.targetMapX = waypointX
+    state.targetMapY = waypointY
+
     if worldX and worldY then
         state.targetWorldX = worldX
         state.targetWorldY = worldY
         state.hasTarget = true
     else
-        DXD:Debug("Failed to convert target to world coordinates")
+        self:Debug("Failed to convert target to world coordinates (all fallbacks failed)")
         state.hasTarget = false
     end
 
-    -- Set native WoW waypoint so the built-in UI + SuperTrack arrow displays it
-    local wpX = mapX
-    local wpY = mapY
-    if wpX and wpY then
-        if wpX > 1 then wpX = wpX / 100 end
-        if wpY > 1 then wpY = wpY / 100 end
-    end
-
-    local wpOk, wpErr = pcall(function()
+    -- Set native WoW waypoint so the built-in SuperTrack arrow displays it
+    -- Must use a waypointable (outdoor zone) mapID, not a dungeon interior
+    local wpOk = pcall(function()
         if C_Map and C_Map.SetUserWaypoint then
             if UiMapPoint and UiMapPoint.CreateFromCoordinates then
-                local point = UiMapPoint.CreateFromCoordinates(mapID, wpX, wpY)
+                local point = UiMapPoint.CreateFromCoordinates(waypointMapID, waypointX, waypointY)
                 C_Map.SetUserWaypoint(point)
             else
-                local point = { uiMapID = mapID, position = CreateVector2D(wpX, wpY) }
+                local point = { uiMapID = waypointMapID, position = CreateVector2D(waypointX, waypointY) }
                 C_Map.SetUserWaypoint(point)
             end
         end
     end)
-    if not wpOk then
-        DXD:Debug("Waypoint API error: " .. tostring(wpErr))
+
+    -- If waypoint failed on the resolved map, try the player's current map
+    if not wpOk or not C_Map.HasUserWaypoint() then
+        pcall(function()
+            local playerMap = C_Map.GetBestMapForUnit("player")
+            if playerMap then
+                local point = UiMapPoint.CreateFromCoordinates(playerMap, waypointX, waypointY)
+                C_Map.SetUserWaypoint(point)
+            end
+        end)
     end
 
-    local stOk, stErr = pcall(function()
+    pcall(function()
         if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         end
     end)
-    if not stOk then
-        DXD:Debug("SuperTrack API error: " .. tostring(stErr))
-    end
 
     -- Print destination info
     local displayName = name or "Waypoint"
