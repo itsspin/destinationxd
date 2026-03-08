@@ -1,0 +1,8 @@
+package-as: DestinationXD
+
+ignore:
+  - .github
+  - .pkgmeta
+  - .gitignore
+  - README.md
+  - DestinationXD-Plan.md

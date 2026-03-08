@@ -1,0 +1,28 @@
+name: Package and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create addon package
+        run: |
+          mkdir -p DestinationXD
+          cp -r Core Data Libs Modules UI DestinationXD.toc DestinationXD/
+          zip -r DestinationXD-${{ steps.version.outputs.VERSION }}.zip DestinationXD/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: DestinationXD-${{ steps.version.outputs.VERSION }}.zip
+          generate_release_notes: true
