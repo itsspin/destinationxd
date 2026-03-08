@@ -1,7 +1,8 @@
 ------------------------------------------------------------------------
 -- DestinationXD - TravelPlannerFrame.lua
--- The zone browser / route planner window
--- Clean, intuitive design with proper scroll, dungeon support, icons
+-- The destination browser / route planner / city guide window
+-- Acts like a smart guard NPC: services, dungeons, zone navigation
+-- ALL TEXT uses ASCII + WoW color codes only (no Unicode)
 ------------------------------------------------------------------------
 local ADDON_NAME, DXD = ...
 
@@ -23,18 +24,18 @@ local searchBox
 local expandedContinents = {}
 local selectedZone = nil
 
--- Forward declarations for local functions
+-- Forward declarations
 local PopulateZoneList, OnZoneSelected, DisplayRoute
 
--- Zone entry frames pool
+-- Zone entry pool
 local zoneEntryPool = {}
 local activeEntries = {}
 
--- Type icons (safe Unicode that WoW renders reliably)
+-- Safe prefixes (ASCII + color codes only, NO Unicode)
 local TYPE_ICONS = {
-    capital  = "|cffffcc00\226\152\134|r ",   -- ☆ star
-    dungeon  = "|cffa335ee\226\154\148|r ",    -- ⚔ swords (purple)
-    zone     = "",                              -- no icon for regular zones
+    capital  = "|cffffcc00*|r ",       -- gold star
+    dungeon  = "|cffa335ee+|r ",       -- purple cross
+    zone     = "",
 }
 
 -- Filter state
@@ -45,24 +46,21 @@ local currentFilter = ""
 ------------------------------------------------------------------------
 
 local function CreateTravelPlannerWindow()
-    -- Main window
     travelFrame = CreateFrame("Frame", "DestinationXDTravelFrame", UIParent, "BackdropTemplate")
     travelFrame:SetSize(320, 520)
     travelFrame:SetPoint("CENTER", -200, 0)
     travelFrame:SetFrameStrata("HIGH")
     travelFrame:SetFrameLevel(50)
 
-    -- Frosted glass background
     travelFrame:SetBackdrop({
         bgFile = "Interface\\BUTTONS\\WHITE8X8",
         edgeFile = "Interface\\BUTTONS\\WHITE8X8",
         edgeSize = 1,
     })
     local bg = Config.COLORS.PANEL_BG
-    travelFrame:SetBackdropColor(bg.r, bg.g, bg.b, 0.88)
+    travelFrame:SetBackdropColor(bg.r, bg.g, bg.b, 0.90)
     travelFrame:SetBackdropBorderColor(1, 1, 1, 0.06)
 
-    -- Make movable and closeable
     travelFrame:SetMovable(true)
     travelFrame:EnableMouse(true)
     travelFrame:RegisterForDrag("LeftButton")
@@ -85,7 +83,7 @@ local function CreateTravelPlannerWindow()
     local closeBtn = Widgets.CreateCloseButton(travelFrame)
     closeBtn:SetPoint("TOPRIGHT", -8, -8)
 
-    -- Search/filter box
+    -- Search box
     searchBox = CreateFrame("EditBox", nil, travelFrame, "BackdropTemplate")
     searchBox:SetSize(288, 22)
     searchBox:SetPoint("TOPLEFT", 14, -36)
@@ -103,14 +101,13 @@ local function CreateTravelPlannerWindow()
     searchBox:SetBackdropBorderColor(1, 1, 1, 0.06)
     searchBox:SetTextInsets(8, 8, 0, 0)
 
-    -- Placeholder text
     local placeholder = searchBox:CreateFontString(nil, "ARTWORK")
     placeholder:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
     placeholder:SetShadowColor(0, 0, 0, 0.5)
     placeholder:SetShadowOffset(1, -1)
     placeholder:SetPoint("LEFT", 8, 0)
     placeholder:SetTextColor(0.45, 0.45, 0.50, 0.5)
-    placeholder:SetText("Search zones & dungeons...")
+    placeholder:SetText("Search zones, dungeons, services...")
 
     searchBox:SetScript("OnTextChanged", function(self)
         local text = self:GetText()
@@ -128,7 +125,7 @@ local function CreateTravelPlannerWindow()
         self:ClearFocus()
     end)
 
-    searchBox:SetScript("OnEditFocusGained", function(self)
+    searchBox:SetScript("OnEditFocusGained", function()
         placeholder:Hide()
     end)
 
@@ -138,14 +135,14 @@ local function CreateTravelPlannerWindow()
         end
     end)
 
-    -- Zone list scroll area (larger, accounting for search box)
+    -- Zone list scroll area
     zoneScrollContainer = Widgets.CreateScrollFrame(travelFrame, 288, 290)
     zoneScrollContainer:SetPoint("TOPLEFT", 14, -64)
     zoneListContent = zoneScrollContainer.content
 
-    -- Route panel (at the bottom)
+    -- Route panel (bottom)
     routePanel = CreateFrame("Frame", nil, travelFrame, "BackdropTemplate")
-    routePanel:SetSize(288, 140)
+    routePanel:SetSize(288, 150)
     routePanel:SetPoint("BOTTOMLEFT", 14, 14)
     routePanel:SetBackdrop({
         bgFile = "Interface\\BUTTONS\\WHITE8X8",
@@ -165,7 +162,7 @@ local function CreateTravelPlannerWindow()
     routePanel.title:SetTextColor(secondary.r, secondary.g, secondary.b, secondary.a)
     routePanel.title:SetWidth(270)
 
-    -- Route steps container
+    -- Route steps
     routePanel.stepsText = routePanel:CreateFontString(nil, "OVERLAY")
     routePanel.stepsText:SetFont("Fonts\\FRIZQT__.TTF", Config.FONT_SIZES.ROUTE_STEP, "OUTLINE")
     routePanel.stepsText:SetShadowColor(0, 0, 0, 0.5)
@@ -186,7 +183,7 @@ local function CreateTravelPlannerWindow()
     local tertiary = Config.COLORS.TEXT_TERTIARY
     routePanel.timeText:SetTextColor(tertiary.r, tertiary.g, tertiary.b, tertiary.a)
 
-    -- GO button (styled, not just text)
+    -- GO button
     routePanel.goBtn = CreateFrame("Button", nil, routePanel, "BackdropTemplate")
     routePanel.goBtn:SetSize(50, 24)
     routePanel.goBtn:SetPoint("BOTTOMRIGHT", -8, 6)
@@ -229,14 +226,12 @@ local function CreateTravelPlannerWindow()
         end
     end)
 
-    -- Populate zone list
     PopulateZoneList()
-
     travelFrame:Hide()
 end
 
 ------------------------------------------------------------------------
--- ZONE LIST POPULATION
+-- ZONE LIST ENTRIES
 ------------------------------------------------------------------------
 
 local function GetOrCreateEntry(index)
@@ -247,7 +242,6 @@ local function GetOrCreateEntry(index)
     local entry = CreateFrame("Button", nil, zoneListContent)
     entry:SetSize(280, 22)
 
-    -- Highlight background (subtle)
     entry.bg = entry:CreateTexture(nil, "BACKGROUND")
     entry.bg:SetTexture("Interface\\BUTTONS\\WHITE8X8")
     entry.bg:SetAllPoints()
@@ -261,7 +255,6 @@ local function GetOrCreateEntry(index)
     entry.text:SetWidth(268)
     entry.text:SetJustifyH("LEFT")
 
-    -- Selection indicator (left edge bar)
     entry.selBar = entry:CreateTexture(nil, "ARTWORK")
     entry.selBar:SetTexture("Interface\\BUTTONS\\WHITE8X8")
     entry.selBar:SetSize(2, 16)
@@ -273,7 +266,7 @@ local function GetOrCreateEntry(index)
     local tertiary = Config.COLORS.TEXT_TERTIARY
 
     entry:SetScript("OnEnter", function(self)
-        if not self.isContinent then
+        if not self.isHeader then
             self.text:SetTextColor(primary.r, primary.g, primary.b, primary.a)
             self.bg:SetVertexColor(1, 1, 1, 0.03)
         end
@@ -283,10 +276,12 @@ local function GetOrCreateEntry(index)
         self.bg:SetVertexColor(1, 1, 1, 0)
         if self == selectedZone then
             self.text:SetTextColor(primary.r, primary.g, primary.b, primary.a)
-        elseif self.isContinent then
+        elseif self.isHeader then
             self.text:SetTextColor(tertiary.r, tertiary.g, tertiary.b, tertiary.a)
         else
-            self.text:SetTextColor(secondary.r, secondary.g, secondary.b, secondary.a)
+            -- Restore original color from stored value
+            local c = self.normalColor or secondary
+            self.text:SetTextColor(c.r, c.g, c.b, c.a or 0.55)
         end
     end)
 
@@ -294,38 +289,21 @@ local function GetOrCreateEntry(index)
     return entry
 end
 
---- Get the display prefix for a zone entry
-local function GetZonePrefix(zoneData)
-    if zoneData.capital then
-        return TYPE_ICONS.capital
-    elseif zoneData.dungeon then
-        return TYPE_ICONS.dungeon
-    end
-    return TYPE_ICONS.zone
-end
+------------------------------------------------------------------------
+-- ZONE LIST POPULATION
+------------------------------------------------------------------------
 
 PopulateZoneList = function()
-    -- Clear existing
     for _, entry in ipairs(activeEntries) do
         entry:Hide()
     end
     wipe(activeEntries)
 
-    if not DXD.ZoneData then
-        DXD:Debug("No zone data available for Travel Planner")
-        return
-    end
+    if not DXD.ZoneData then return end
 
     local yOffset = 0
     local entryIndex = 0
     local isFiltering = (currentFilter ~= "")
-
-    -- Sort continents alphabetically
-    local continentOrder = {}
-    for name in pairs(DXD.ZoneData) do
-        table.insert(continentOrder, name)
-    end
-    table.sort(continentOrder)
 
     local secondary = Config.COLORS.TEXT_SECONDARY
     local primary = Config.COLORS.TEXT_PRIMARY
@@ -333,7 +311,100 @@ PopulateZoneList = function()
     local dungeonColor = { r = 0.60, g = 0.40, b = 0.90, a = 0.70 }
 
     -- ============================================================
-    -- MYTHIC+ DUNGEONS (Quick Access - always shown at top)
+    -- CITY SERVICES (Guard mode - prominent when in a city)
+    -- ============================================================
+    local serviceColor = { r = 0.50, g = 0.85, b = 1.0, a = 0.80 }
+    local playerMapID = C_Map.GetBestMapForUnit("player")
+    local cityData = playerMapID and DXD.CityServices and DXD.CityServices[playerMapID]
+
+    if cityData then
+        local hasMatchingServices = false
+        if isFiltering then
+            for _, svc in ipairs(cityData.services) do
+                if strfind(strlower(svc.name), currentFilter, 1, true)
+                    or strfind(strlower(svc.type), currentFilter, 1, true)
+                    or strfind("guard", currentFilter, 1, true)
+                    or strfind("service", currentFilter, 1, true) then
+                    hasMatchingServices = true
+                    break
+                end
+            end
+        else
+            hasMatchingServices = true
+        end
+
+        if hasMatchingServices then
+            -- City services expanded by default (guard mode)
+            local svcExpanded = expandedContinents["_cityservices"] ~= false or isFiltering
+
+            entryIndex = entryIndex + 1
+            local svcHeader = GetOrCreateEntry(entryIndex)
+            svcHeader:SetPoint("TOPLEFT", 0, yOffset)
+            svcHeader.isHeader = true
+            svcHeader.selBar:Hide()
+            svcHeader.bg:SetVertexColor(1, 1, 1, 0)
+
+            local prefix = svcExpanded and "|cff888888v|r " or "|cff888888>|r "
+            svcHeader.text:SetText(prefix .. "|cff55d4ff" .. string.upper(cityData.cityName) .. " SERVICES|r  |cff666670" .. #cityData.services .. "|r")
+            svcHeader.text:SetTextColor(serviceColor.r, serviceColor.g, serviceColor.b, 0.70)
+            svcHeader.normalColor = serviceColor
+
+            svcHeader:SetScript("OnClick", function()
+                if not isFiltering then
+                    expandedContinents["_cityservices"] = not svcExpanded
+                    PopulateZoneList()
+                end
+            end)
+
+            svcHeader:Show()
+            table.insert(activeEntries, svcHeader)
+            yOffset = yOffset - 24
+
+            if svcExpanded then
+                for _, svc in ipairs(cityData.services) do
+                    local matchesSvc = not isFiltering
+                        or strfind(strlower(svc.name), currentFilter, 1, true)
+                        or strfind(strlower(svc.type), currentFilter, 1, true)
+
+                    if matchesSvc then
+                        entryIndex = entryIndex + 1
+                        local svcEntry = GetOrCreateEntry(entryIndex)
+                        svcEntry:SetPoint("TOPLEFT", 14, yOffset)
+                        svcEntry.isHeader = false
+                        svcEntry.zoneName = svc.name
+                        svcEntry.zoneData = {
+                            mapID = playerMapID,
+                            x = svc.x,
+                            y = svc.y,
+                            service = true,
+                            serviceType = svc.type,
+                        }
+                        svcEntry.selBar:Hide()
+                        svcEntry.bg:SetVertexColor(1, 1, 1, 0)
+
+                        local svcInfo = DXD.ServiceIcons and DXD.ServiceIcons[svc.type]
+                        local svcCol = svcInfo and svcInfo.color or serviceColor
+                        svcEntry.text:SetText(svc.name)
+                        svcEntry.text:SetTextColor(svcCol.r, svcCol.g, svcCol.b, 0.80)
+                        svcEntry.normalColor = svcCol
+
+                        svcEntry:SetScript("OnClick", function(self)
+                            -- Direct waypoint to service location
+                            DXD:SetTarget(playerMapID, svc.x, svc.y, "waypoint", svc.name, cityData.cityName)
+                            if travelFrame then travelFrame:Hide() end
+                        end)
+
+                        svcEntry:Show()
+                        table.insert(activeEntries, svcEntry)
+                        yOffset = yOffset - 22
+                    end
+                end
+            end
+        end
+    end
+
+    -- ============================================================
+    -- M+ DUNGEONS
     -- ============================================================
     local mplusColor = { r = 1.0, g = 0.50, b = 0.0, a = 0.85 }
     if DXD.MythicPlusDungeons and DXD.MythicPlusDungeons.dungeons then
@@ -345,7 +416,8 @@ PopulateZoneList = function()
                 if strfind(strlower(dg.name), currentFilter, 1, true)
                     or strfind("mythic", currentFilter, 1, true)
                     or strfind("m+", currentFilter, 1, true)
-                    or strfind("dungeon", currentFilter, 1, true) then
+                    or strfind("dungeon", currentFilter, 1, true)
+                    or strfind("key", currentFilter, 1, true) then
                     hasMatchingMplus = true
                     break
                 end
@@ -358,15 +430,15 @@ PopulateZoneList = function()
             entryIndex = entryIndex + 1
             local mplusHeader = GetOrCreateEntry(entryIndex)
             mplusHeader:SetPoint("TOPLEFT", 0, yOffset)
-            mplusHeader.isContinent = true
-            mplusHeader.continentName = "_mythicplus"
+            mplusHeader.isHeader = true
             mplusHeader.selBar:Hide()
             mplusHeader.bg:SetVertexColor(1, 1, 1, 0)
 
             local mplusExpanded = expandedContinents["_mythicplus"] or isFiltering
-            local mplusPrefix = mplusExpanded and "\226\150\190 " or "\226\150\184 "
-            mplusHeader.text:SetText(mplusPrefix .. "|cffff8000MYTHIC+ DUNGEONS|r  |cff666670" .. #mplusDungeons .. "|r")
+            local prefix = mplusExpanded and "|cff888888v|r " or "|cff888888>|r "
+            mplusHeader.text:SetText(prefix .. "|cffff8000M+ DUNGEONS|r  |cff666670" .. #mplusDungeons .. "|r")
             mplusHeader.text:SetTextColor(mplusColor.r, mplusColor.g, mplusColor.b, 0.70)
+            mplusHeader.normalColor = mplusColor
 
             mplusHeader:SetScript("OnClick", function()
                 if not isFiltering then
@@ -386,12 +458,13 @@ PopulateZoneList = function()
                         or strfind("mythic", currentFilter, 1, true)
                         or strfind("m+", currentFilter, 1, true)
                         or strfind("dungeon", currentFilter, 1, true)
+                        or strfind("key", currentFilter, 1, true)
 
                     if matchesMplus then
                         entryIndex = entryIndex + 1
                         local dgEntry = GetOrCreateEntry(entryIndex)
                         dgEntry:SetPoint("TOPLEFT", 14, yOffset)
-                        dgEntry.isContinent = false
+                        dgEntry.isHeader = false
                         dgEntry.zoneName = dg.name
                         dgEntry.zoneData = {
                             mapID = dg.entranceMapID,
@@ -403,8 +476,14 @@ PopulateZoneList = function()
                         dgEntry.selBar:Hide()
                         dgEntry.bg:SetVertexColor(1, 1, 1, 0)
 
-                        dgEntry.text:SetText("|cffff8000" .. dg.keyLevel .. "|r " .. dg.name)
+                        -- Label: "M+" prefix + dungeon name, legacy tag
+                        local label = "|cffff8000M+|r " .. dg.name
+                        if dg.legacy then
+                            label = label .. " |cff666670(legacy)|r"
+                        end
+                        dgEntry.text:SetText(label)
                         dgEntry.text:SetTextColor(mplusColor.r, mplusColor.g, mplusColor.b, 0.75)
+                        dgEntry.normalColor = mplusColor
 
                         dgEntry:SetScript("OnClick", function(self)
                             OnZoneSelected(self, dg.name, self.zoneData)
@@ -412,95 +491,6 @@ PopulateZoneList = function()
 
                         dgEntry:Show()
                         table.insert(activeEntries, dgEntry)
-                        yOffset = yOffset - 22
-                    end
-                end
-            end
-        end
-    end
-
-    -- ============================================================
-    -- CITY SERVICES (If player is in a city with services data)
-    -- ============================================================
-    local serviceColor = { r = 0.50, g = 0.85, b = 1.0, a = 0.80 }
-    local playerMapID = C_Map.GetBestMapForUnit("player")
-    local cityData = playerMapID and DXD.CityServices and DXD.CityServices[playerMapID]
-
-    if cityData then
-        local hasMatchingServices = false
-        if isFiltering then
-            for _, svc in ipairs(cityData.services) do
-                if strfind(strlower(svc.name), currentFilter, 1, true)
-                    or strfind(strlower(svc.type), currentFilter, 1, true) then
-                    hasMatchingServices = true
-                    break
-                end
-            end
-        else
-            hasMatchingServices = true
-        end
-
-        if hasMatchingServices then
-            entryIndex = entryIndex + 1
-            local svcHeader = GetOrCreateEntry(entryIndex)
-            svcHeader:SetPoint("TOPLEFT", 0, yOffset)
-            svcHeader.isContinent = true
-            svcHeader.continentName = "_cityservices"
-            svcHeader.selBar:Hide()
-            svcHeader.bg:SetVertexColor(1, 1, 1, 0)
-
-            local svcExpanded = expandedContinents["_cityservices"] or isFiltering
-            local svcPrefix = svcExpanded and "\226\150\190 " or "\226\150\184 "
-            svcHeader.text:SetText(svcPrefix .. "|cff55d4ff" .. string.upper(cityData.cityName) .. " SERVICES|r")
-            svcHeader.text:SetTextColor(serviceColor.r, serviceColor.g, serviceColor.b, 0.70)
-
-            svcHeader:SetScript("OnClick", function()
-                if not isFiltering then
-                    expandedContinents["_cityservices"] = not expandedContinents["_cityservices"]
-                    PopulateZoneList()
-                end
-            end)
-
-            svcHeader:Show()
-            table.insert(activeEntries, svcHeader)
-            yOffset = yOffset - 24
-
-            if svcExpanded then
-                for _, svc in ipairs(cityData.services) do
-                    local matchesSvc = not isFiltering
-                        or strfind(strlower(svc.name), currentFilter, 1, true)
-                        or strfind(strlower(svc.type), currentFilter, 1, true)
-
-                    if matchesSvc then
-                        entryIndex = entryIndex + 1
-                        local svcEntry = GetOrCreateEntry(entryIndex)
-                        svcEntry:SetPoint("TOPLEFT", 14, yOffset)
-                        svcEntry.isContinent = false
-                        svcEntry.zoneName = svc.name
-                        svcEntry.zoneData = {
-                            mapID = playerMapID,
-                            x = svc.x,
-                            y = svc.y,
-                            service = true,
-                            serviceType = svc.type,
-                        }
-                        svcEntry.selBar:Hide()
-                        svcEntry.bg:SetVertexColor(1, 1, 1, 0)
-
-                        -- Color based on service type
-                        local svcInfo = DXD.ServiceIcons and DXD.ServiceIcons[svc.type]
-                        local svcCol = svcInfo and svcInfo.color or serviceColor
-                        svcEntry.text:SetText(svc.name)
-                        svcEntry.text:SetTextColor(svcCol.r, svcCol.g, svcCol.b, 0.80)
-
-                        svcEntry:SetScript("OnClick", function(self)
-                            -- Direct beacon to service location
-                            DXD:SetTarget(playerMapID, svc.x, svc.y, "waypoint", svc.name, cityData.cityName)
-                            if travelFrame then travelFrame:Hide() end
-                        end)
-
-                        svcEntry:Show()
-                        table.insert(activeEntries, svcEntry)
                         yOffset = yOffset - 22
                     end
                 end
@@ -518,10 +508,15 @@ PopulateZoneList = function()
     -- ============================================================
     -- ZONE LIST (Continents & Zones)
     -- ============================================================
+    local continentOrder = {}
+    for name in pairs(DXD.ZoneData) do
+        table.insert(continentOrder, name)
+    end
+    table.sort(continentOrder)
+
     for _, continentName in ipairs(continentOrder) do
         local continent = DXD.ZoneData[continentName]
 
-        -- When filtering, check if any children match
         local hasMatchingChildren = false
         local matchingZones = {}
         if continent.children then
@@ -539,7 +534,6 @@ PopulateZoneList = function()
             end
         end
 
-        -- Skip continents with no matching children when filtering
         if isFiltering and not hasMatchingChildren then
             -- skip
         else
@@ -547,24 +541,17 @@ PopulateZoneList = function()
 
             local continentEntry = GetOrCreateEntry(entryIndex)
             continentEntry:SetPoint("TOPLEFT", 0, yOffset)
-            continentEntry.isContinent = true
+            continentEntry.isHeader = true
             continentEntry.continentName = continentName
             continentEntry.selBar:Hide()
             continentEntry.bg:SetVertexColor(1, 1, 1, 0)
 
-            -- Count children (total, not filtered)
             local childCount = 0
-            if continent.children then
-                for _ in pairs(continent.children) do
-                    childCount = childCount + 1
-                end
-            end
-
-            -- Count dungeons separately for display
             local dungeonCount = 0
             local zoneCount = 0
             if continent.children then
                 for _, zone in pairs(continent.children) do
+                    childCount = childCount + 1
                     if zone.dungeon then
                         dungeonCount = dungeonCount + 1
                     else
@@ -574,9 +561,8 @@ PopulateZoneList = function()
             end
 
             local isExpanded = expandedContinents[continentName] or isFiltering
-            local prefix = isExpanded and "\226\150\190 " or "\226\150\184 "  -- ▾ or ▸
+            local prefix = isExpanded and "|cff888888v|r " or "|cff888888>|r "
 
-            -- Show count breakdown
             local countStr
             if dungeonCount > 0 then
                 countStr = zoneCount .. " + " .. dungeonCount .. "d"
@@ -585,8 +571,9 @@ PopulateZoneList = function()
             end
             continentEntry.text:SetText(prefix .. string.upper(continentName) .. "  |cff666670" .. countStr .. "|r")
             continentEntry.text:SetTextColor(tertiary.r, tertiary.g, tertiary.b, 0.55)
+            continentEntry.normalColor = tertiary
 
-            continentEntry:SetScript("OnClick", function(self)
+            continentEntry:SetScript("OnClick", function()
                 if not isFiltering then
                     expandedContinents[continentName] = not expandedContinents[continentName]
                     PopulateZoneList()
@@ -597,7 +584,6 @@ PopulateZoneList = function()
             table.insert(activeEntries, continentEntry)
             yOffset = yOffset - 24
 
-            -- Show children if expanded or filtering
             if isExpanded and #matchingZones > 0 then
                 for _, zoneName in ipairs(matchingZones) do
                     local zone = continent.children[zoneName]
@@ -605,20 +591,23 @@ PopulateZoneList = function()
 
                     local zoneEntry = GetOrCreateEntry(entryIndex)
                     zoneEntry:SetPoint("TOPLEFT", 14, yOffset)
-                    zoneEntry.isContinent = false
+                    zoneEntry.isHeader = false
                     zoneEntry.zoneName = zoneName
                     zoneEntry.zoneData = zone
                     zoneEntry.selBar:Hide()
                     zoneEntry.bg:SetVertexColor(1, 1, 1, 0)
 
-                    local prefix = GetZonePrefix(zone)
-                    zoneEntry.text:SetText(prefix .. zoneName)
+                    local zPrefix = ""
+                    if zone.capital then zPrefix = TYPE_ICONS.capital
+                    elseif zone.dungeon then zPrefix = TYPE_ICONS.dungeon end
+                    zoneEntry.text:SetText(zPrefix .. zoneName)
 
-                    -- Color dungeons differently
                     if zone.dungeon then
                         zoneEntry.text:SetTextColor(dungeonColor.r, dungeonColor.g, dungeonColor.b, dungeonColor.a)
+                        zoneEntry.normalColor = dungeonColor
                     else
                         zoneEntry.text:SetTextColor(secondary.r, secondary.g, secondary.b, secondary.a)
+                        zoneEntry.normalColor = secondary
                     end
 
                     zoneEntry:SetScript("OnClick", function(self)
@@ -633,7 +622,6 @@ PopulateZoneList = function()
         end
     end
 
-    -- Update content height with extra padding at bottom for scroll
     zoneListContent:SetHeight(math.abs(yOffset) + 40)
 end
 
@@ -649,11 +637,8 @@ OnZoneSelected = function(entry, zoneName, zoneData)
     -- Deselect previous
     if selectedZone then
         local prevData = selectedZone.zoneData
-        if prevData and prevData.dungeon then
-            selectedZone.text:SetTextColor(dungeonColor.r, dungeonColor.g, dungeonColor.b, dungeonColor.a)
-        else
-            selectedZone.text:SetTextColor(secondary.r, secondary.g, secondary.b, secondary.a)
-        end
+        local prevColor = selectedZone.normalColor or secondary
+        selectedZone.text:SetTextColor(prevColor.r, prevColor.g, prevColor.b, prevColor.a or 0.55)
         selectedZone.selBar:Hide()
     end
 
@@ -661,20 +646,17 @@ OnZoneSelected = function(entry, zoneName, zoneData)
     selectedZone = entry
     entry.text:SetTextColor(primary.r, primary.g, primary.b, primary.a)
 
-    -- Show selection bar with beacon color
     local beaconColor = zoneData.dungeon and Config.COLORS.BEACON_DUNGEON or Config.COLORS.BEACON_TRAVEL
     entry.selBar:SetVertexColor(beaconColor.r, beaconColor.g, beaconColor.b, 0.8)
     entry.selBar:Show()
 
-    -- If this is a M+ dungeon with entrance coords, set beacon directly
+    -- M+ dungeon: set waypoint to entrance directly
     if zoneData.mythicPlus and zoneData.entranceX and zoneData.entranceY then
-        -- Show route info then navigate to dungeon entrance
         routePanel.title:SetText("|cffff8000M+|r " .. zoneName)
         routePanel.stepsText:SetText("Navigate to dungeon entrance")
         routePanel.timeText:SetText("")
         routePanel.currentRoute = nil
 
-        -- Create a direct GO action
         routePanel.goBtn:Show()
         routePanel.goBtn:SetScript("OnClick", function()
             DXD:SetTarget(zoneData.mapID, zoneData.entranceX, zoneData.entranceY,
@@ -685,14 +667,14 @@ OnZoneSelected = function(entry, zoneName, zoneData)
         return
     end
 
-    -- If this is a city service, navigate directly
+    -- City service: direct waypoint (already handled in OnClick, but show info)
     if zoneData.service and zoneData.x and zoneData.y then
         DXD:SetTarget(zoneData.mapID, zoneData.x, zoneData.y, "waypoint", zoneName)
         if travelFrame then travelFrame:Hide() end
         return
     end
 
-    -- Compute route for regular zones
+    -- Regular zone: compute route
     local fromMap = C_Map.GetBestMapForUnit("player")
     local toMap = zoneData.mapID
 
@@ -721,11 +703,10 @@ DisplayRoute = function(destName, route, zoneData)
 
     local secondary = Config.COLORS.TEXT_SECONDARY
 
-    -- Route title
+    -- Route title (ASCII arrow only)
     local currentInfo = C_Map.GetMapInfo(C_Map.GetBestMapForUnit("player") or 0)
     local fromName = currentInfo and currentInfo.name or "Here"
-    local arrow = " \226\134\146 "  -- →
-    routePanel.title:SetText(fromName .. arrow .. destName)
+    routePanel.title:SetText(fromName .. " |cff888888->|r " .. destName)
 
     if route.sameZone then
         routePanel.stepsText:SetText("You're already here!")
@@ -736,7 +717,6 @@ DisplayRoute = function(destName, route, zoneData)
         routePanel.timeText:SetText("")
         routePanel.goBtn:Hide()
     else
-        -- Format steps
         local routeDisplay = DXD:GetModule("RouteDisplay")
         local lines = {}
         for i, step in ipairs(route.steps) do
@@ -760,12 +740,17 @@ function TravelPlannerFrame:Toggle()
     if travelFrame:IsShown() then
         travelFrame:Hide()
     else
+        -- Refresh city services when opening (player may have moved)
+        PopulateZoneList()
         travelFrame:Show()
     end
 end
 
 function TravelPlannerFrame:Show()
-    if travelFrame then travelFrame:Show() end
+    if travelFrame then
+        PopulateZoneList()
+        travelFrame:Show()
+    end
 end
 
 function TravelPlannerFrame:Hide()
@@ -785,6 +770,13 @@ end
 function TravelPlannerFrame:Initialize()
     C_Timer.After(0.1, function()
         CreateTravelPlannerWindow()
+
+        -- Auto-expand city services if in a city
+        local playerMapID = C_Map.GetBestMapForUnit("player")
+        if playerMapID and DXD.CityServices and DXD.CityServices[playerMapID] then
+            expandedContinents["_cityservices"] = true
+        end
+
         DXD:Debug("TravelPlannerFrame created")
     end)
 end

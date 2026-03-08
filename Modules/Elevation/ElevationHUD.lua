@@ -124,20 +124,19 @@ local function UpdateDisplay()
     -- Update elevation line text
     if elevState == "above" then
         local vertStr = math.floor(vertDist + 0.5)
-        elevLine:SetText("\226\150\178 " .. vertStr)  -- ▲
+        elevLine:SetText("^ " .. vertStr)
     elseif elevState == "below" then
         local vertStr = math.floor(vertDist + 0.5)
-        elevLine:SetText("\226\150\188 " .. vertStr)  -- ▼
+        elevLine:SetText("v " .. vertStr)
     else
-        -- Same level: just show total distance
         local distStr = math.floor(horizDist + 0.5)
-        elevLine:SetText("\226\134\146 " .. distStr)  -- →
+        elevLine:SetText("-> " .. distStr)
     end
 
     -- Update horizontal distance line (only shown when elevation differs)
     if DXD.db.showDecomposedDistance and elevState ~= "level" then
         local horizStr = math.floor(horizDist + 0.5)
-        horizLine:SetText("\226\134\146 " .. horizStr)  -- →
+        horizLine:SetText("-> " .. horizStr)
         horizLine:Show()
     else
         horizLine:Hide()

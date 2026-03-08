@@ -35,10 +35,10 @@ function DistanceDisplay:GetFormattedInfo()
 
     -- Decomposed string
     if state.elevationState ~= "level" and DXD.db.showDecomposedDistance then
-        local chevron = state.elevationState == "above" and "\226\150\178" or "\226\150\188"
-        info.decomposed = "\226\134\146 " .. info.horizontal .. "  " .. chevron .. " " .. info.vertical
+        local chevron = state.elevationState == "above" and "|cffff9933^|r" or "|cff3399ffv|r"
+        info.decomposed = "-> " .. info.horizontal .. "  " .. chevron .. " " .. info.vertical
     else
-        info.decomposed = "\226\134\146 " .. info.total
+        info.decomposed = "-> " .. info.total
     end
 
     return info

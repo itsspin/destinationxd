@@ -303,6 +303,7 @@ end)
 ------------------------------------------------------------------------
 
 --- Set a navigation target from map coordinates
+-- Sets both internal state AND a native WoW waypoint (for WaypointUI etc.)
 function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     local state = self.state
 
@@ -318,12 +319,29 @@ function DXD:SetTarget(mapID, mapX, mapY, targetType, name, description)
     if worldX and worldY then
         state.targetWorldX = worldX
         state.targetWorldY = worldY
-        -- Z will be estimated by ElevationTracker
         state.hasTarget = true
     else
         DXD:Debug("Failed to convert target to world coordinates")
         state.hasTarget = false
     end
+
+    -- Set native WoW waypoint so WaypointUI (or default UI) displays it
+    pcall(function()
+        if C_Map and C_Map.SetUserWaypoint and UiMapPoint then
+            local point = UiMapPoint.CreateFromCoordinates(mapID, mapX, mapY)
+            C_Map.SetUserWaypoint(point)
+        end
+        if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+            C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+        end
+    end)
+
+    -- Print destination info
+    local displayName = name or "Waypoint"
+    if description then
+        displayName = displayName .. " |cff888888(" .. description .. ")|r"
+    end
+    self:Print("Waypoint set: " .. displayName)
 
     -- Notify all modules
     for _, mod in pairs(self.modules) do
@@ -382,6 +400,16 @@ function DXD:ClearTarget()
     state.elevationDelta = 0
     state.elevationState = "level"
     state.isObstructed = false
+
+    -- Clear native WoW waypoint
+    pcall(function()
+        if C_Map and C_Map.ClearUserWaypoint then
+            C_Map.ClearUserWaypoint()
+        end
+        if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+            C_SuperTrack.SetSuperTrackedUserWaypoint(false)
+        end
+    end)
 
     for _, mod in pairs(self.modules) do
         if mod.OnTargetCleared then
