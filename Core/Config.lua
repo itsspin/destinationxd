@@ -171,27 +171,22 @@ Config.DEFAULTS = {
     autoClearOnArrival = true,
     arrivalDistance = 5,
 
-    -- Beacon
-    beaconScale = 1.0,      -- Overall beacon scale
-    beamOpacity = 0.90,
-    beamWidthScale = 1.0,   -- Beam width multiplier
-    showThroughTerrain = false,
-    showBeaconName = true,
-
-    -- Elevation
-    showElevation = true,
-    showDecomposedDistance = true,
-    verticalTolerance = 8,
-
-    -- Navigator
+    -- Navigation HUD (direction arrow, distance, elevation)
     showArrow = true,
     showETA = true,
     arrowScale = 1.0,
+    showElevation = true,
+    showDecomposedDistance = true,
+    verticalTolerance = 8,
 
     -- Travel Planner
     considerHearthstoneCooldown = true,
     hearthstoneLocation = "auto",
     preferredFlightStyle = "shortest",
+
+    -- Radial Quick Access Menu
+    radialMenuEnabled = true,
+    radialMenuKey = "`",
 
     -- Integrations
     tomtomCompat = true,

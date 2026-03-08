@@ -798,11 +798,22 @@ function TravelPlannerFrame:Initialize()
     C_Timer.After(0.1, function()
         CreateTravelPlannerWindow()
 
-        -- Auto-expand city services if in a city (check aliases too)
+        -- Auto-expand city services if in a city (check aliases + parent maps)
         local playerMapID = C_Map.GetBestMapForUnit("player")
         local initCityID = playerMapID
         if initCityID and DXD.CityMapAliases and DXD.CityMapAliases[initCityID] then
             initCityID = DXD.CityMapAliases[initCityID]
+        end
+        if initCityID and DXD.CityServices and not DXD.CityServices[initCityID] then
+            local parentInfo = initCityID and C_Map.GetMapInfo(initCityID)
+            if parentInfo and parentInfo.parentMapID and parentInfo.parentMapID > 0 then
+                local parentID = parentInfo.parentMapID
+                if DXD.CityServices[parentID] then
+                    initCityID = parentID
+                elseif DXD.CityMapAliases and DXD.CityMapAliases[parentID] then
+                    initCityID = DXD.CityMapAliases[parentID]
+                end
+            end
         end
         if initCityID and DXD.CityServices and DXD.CityServices[initCityID] then
             expandedContinents["_cityservices"] = true

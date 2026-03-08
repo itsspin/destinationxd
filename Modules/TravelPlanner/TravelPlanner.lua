@@ -333,6 +333,12 @@ function TravelPlanner:StartRoute(route)
 
     self:NavigateToStep(1)
     DXD:Print("Route started: " .. #route.steps .. " step(s), " .. Utils.FormatETA(route.totalCost))
+
+    -- Show persistent route tracker
+    local routeDisplay = DXD:GetModule("RouteDisplay")
+    if routeDisplay and routeDisplay.UpdateTracker then
+        routeDisplay:UpdateTracker()
+    end
 end
 
 --- Navigate to a specific step in the route
@@ -402,6 +408,11 @@ function TravelPlanner:CompleteRoute()
     currentStep = 0
     DXD.state.travelRoute = nil
     DXD.state.travelRouteStep = 0
+
+    local routeDisplay = DXD:GetModule("RouteDisplay")
+    if routeDisplay and routeDisplay.HideTracker then
+        routeDisplay:HideTracker()
+    end
 end
 
 function TravelPlanner:CancelRoute()
@@ -412,6 +423,11 @@ function TravelPlanner:CancelRoute()
         DXD.state.travelRoute = nil
         DXD.state.travelRouteStep = 0
         DXD:ClearTarget()
+
+        local routeDisplay = DXD:GetModule("RouteDisplay")
+        if routeDisplay and routeDisplay.HideTracker then
+            routeDisplay:HideTracker()
+        end
     end
 end
 
