@@ -95,17 +95,27 @@ Config.BEACON = {
     CLOSE_DISTANCE    = 5,
 
     -- Pulse opacity range
-    PULSE_MIN_ALPHA   = 0.75,
-    PULSE_MAX_ALPHA   = 0.95,
+    PULSE_MIN_ALPHA   = 0.80,
+    PULSE_MAX_ALPHA   = 0.97,
 
-    -- Beam visual (larger default for visibility, user-scalable)
-    BEAM_WIDTH_BASE   = 5,    -- pixels (core shaft)
+    -- Beam visual - thin and elegant like WaypointUI
+    BEAM_WIDTH_BASE   = 1.5,  -- pixels (core shaft - very thin)
     BEAM_HEIGHT_BASE  = 0,    -- 0 = extend to top of screen
-    GLOW_WIDTH_BASE   = 22,   -- pixels (inner glow width)
+    GLOW_WIDTH_BASE   = 5,    -- pixels (inner glow width)
 
     -- Close-range firefly bob
     BOB_AMPLITUDE     = 3,    -- pixels
     BOB_PERIOD        = 2.0,  -- seconds
+}
+
+------------------------------------------------------------------------
+-- EDGE INDICATOR SETTINGS (off-screen diamond)
+------------------------------------------------------------------------
+Config.EDGE_INDICATOR = {
+    SIZE              = 24,   -- diamond size
+    MARGIN            = 45,   -- distance from screen edge
+    ARROW_SIZE        = 12,   -- directional arrow size
+    ARROW_OFFSET      = 16,   -- offset from diamond center
 }
 
 ------------------------------------------------------------------------
@@ -162,9 +172,9 @@ Config.DEFAULTS = {
     arrivalDistance = 5,
 
     -- Beacon
-    beaconScale = 1.2,      -- Overall beacon scale (1.2 = slightly larger default)
-    beamOpacity = 0.85,
-    beamWidthScale = 1.5,   -- Beam width multiplier for visibility
+    beaconScale = 1.0,      -- Overall beacon scale
+    beamOpacity = 0.90,
+    beamWidthScale = 1.0,   -- Beam width multiplier
     showThroughTerrain = false,
     showBeaconName = true,
 
