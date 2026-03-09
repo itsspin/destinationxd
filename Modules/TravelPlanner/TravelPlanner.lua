@@ -86,6 +86,56 @@ local function SameContinent(mapA, mapB)
 end
 
 ------------------------------------------------------------------------
+-- ZONE RESOLUTION
+-- Resolves sub-zones/micro-zones to their parent zone in ZoneData
+-- so the routing graph can properly connect player position to portals
+------------------------------------------------------------------------
+
+-- Build a lookup of all known zone mapIDs for fast checking
+local knownZones = {}
+
+local function BuildKnownZoneLookup()
+    if not DXD.ZoneData then return end
+    for continentName, continent in pairs(DXD.ZoneData) do
+        if continent.children then
+            for zoneName, zone in pairs(continent.children) do
+                if zone.mapID then
+                    knownZones[zone.mapID] = true
+                end
+            end
+        end
+    end
+end
+
+--- Resolve a mapID to a known zone in our routing data.
+--- If the mapID is already known, returns it as-is.
+--- Otherwise, walks up the C_Map parent chain to find the nearest
+--- ancestor that exists in our ZoneData (e.g., sub-zone -> capital city).
+local function ResolveToKnownZone(mapID)
+    if not mapID then return nil end
+    if knownZones[mapID] then return mapID end
+
+    -- Walk up the parent chain via WoW API
+    if C_Map and C_Map.GetMapInfo then
+        local visited = {}
+        local current = mapID
+        for i = 1, 10 do  -- max 10 levels to avoid infinite loops
+            if visited[current] then break end
+            visited[current] = true
+            local info = C_Map.GetMapInfo(current)
+            if not info or not info.parentMapID or info.parentMapID == 0 then break end
+            local parent = info.parentMapID
+            if knownZones[parent] then
+                return parent
+            end
+            current = parent
+        end
+    end
+
+    return mapID  -- fallback: return original
+end
+
+------------------------------------------------------------------------
 -- GRAPH BUILDING
 ------------------------------------------------------------------------
 
@@ -210,10 +260,35 @@ function TravelPlanner:FindRoute(fromMapID, toMapID)
         return { steps = {}, totalCost = 0, sameZone = true }
     end
 
-    -- Check if same continent - direct flight is always an option
-    local isSameContinent = SameContinent(fromMapID, toMapID)
+    -- Resolve sub-zones to known parent zones for routing
+    -- e.g., a micro-zone inside Orgrimmar -> Orgrimmar (85)
+    local resolvedFrom = ResolveToKnownZone(fromMapID)
+    local resolvedTo = ResolveToKnownZone(toMapID)
 
-    local graph = BuildGraph(fromMapID, toMapID)
+    -- If after resolution the zones are the same, player is already there
+    if resolvedFrom == resolvedTo then
+        return { steps = {}, totalCost = 0, sameZone = true }
+    end
+
+    -- Check if same continent - direct flight is always an option
+    local isSameContinent = SameContinent(resolvedFrom, resolvedTo)
+
+    local graph = BuildGraph(resolvedFrom, resolvedTo)
+
+    -- If player's actual mapID differs from resolved zone, add a zero-cost
+    -- bridge edge so Dijkstra can reach the resolved zone's portal/fly edges
+    if fromMapID ~= resolvedFrom then
+        if not graph[fromMapID] then
+            graph[fromMapID] = { edges = {} }
+        end
+        table.insert(graph[fromMapID].edges, {
+            to = resolvedFrom,
+            cost = 0,
+            method = METHOD.WALK_FLY,
+            name = "Walk to portal area",
+            details = nil,
+        })
+    end
 
     -- Dijkstra's algorithm
     local dist = {}
@@ -236,7 +311,7 @@ function TravelPlanner:FindRoute(fromMapID, toMapID)
 
         if not visited[u] then
             visited[u] = true
-            if u == toMapID then break end
+            if u == toMapID or u == resolvedTo then break end
 
             local node = graph[u]
             if node then
@@ -255,22 +330,31 @@ function TravelPlanner:FindRoute(fromMapID, toMapID)
         end
     end
 
+    -- Also check resolvedTo in case destination needed resolution
+    local targetMapID = toMapID
+    if not prev[toMapID] and prev[resolvedTo] and resolvedTo ~= toMapID then
+        targetMapID = resolvedTo
+    end
+
     -- Reconstruct path
-    if prev[toMapID] then
-        local route = { steps = {}, totalCost = dist[toMapID] or 0 }
-        local current = toMapID
+    if prev[targetMapID] then
+        local route = { steps = {}, totalCost = dist[targetMapID] or 0 }
+        local current = targetMapID
         while prev[current] do
             local step = prev[current]
-            local mapInfo = C_Map.GetMapInfo(step.edge.to)
-            table.insert(route.steps, 1, {
-                fromMapID = step.from,
-                toMapID = step.edge.to,
-                method = step.edge.method,
-                name = step.edge.name or (METHOD_NAMES[step.edge.method] or "Travel"),
-                cost = step.edge.cost,
-                details = step.edge.details,
-                zoneName = mapInfo and mapInfo.name or "Unknown",
-            })
+            -- Skip zero-cost bridge edges (sub-zone -> parent zone resolution)
+            if step.edge.cost > 0 then
+                local mapInfo = C_Map.GetMapInfo(step.edge.to)
+                table.insert(route.steps, 1, {
+                    fromMapID = step.from,
+                    toMapID = step.edge.to,
+                    method = step.edge.method,
+                    name = step.edge.name or (METHOD_NAMES[step.edge.method] or "Travel"),
+                    cost = step.edge.cost,
+                    details = step.edge.details,
+                    zoneName = mapInfo and mapInfo.name or "Unknown",
+                })
+            end
             current = step.from
         end
         return route
@@ -372,24 +456,37 @@ function TravelPlanner:NavigateToStep(stepIndex)
             DXD:SetTarget(step.toMapID, 0.5, 0.5, "travel", step.name, stepDesc)
         end
     elseif step.method == METHOD.HEARTHSTONE then
-        -- Hearthstone: show on-screen instruction via the HUD
-        -- Set a synthetic target so the DirectionArrow / RouteDisplay shows
+        -- Hearthstone: auto-use the item and set waypoint to destination
         local hsDestMap = step.toMapID
         if hsDestMap then
             DXD:SetTarget(hsDestMap, 0.5, 0.5, "travel", step.name, stepDesc .. " - Use now!")
+        end
+
+        -- Try to use the hearthstone item automatically
+        local itemID = nil
+        if step.name and step.name:find("Dalaran") then
+            itemID = 140192  -- Dalaran Hearthstone
         else
-            -- No destination map, still display via state so HUD shows
-            DXD.state.targetName = step.name
-            DXD.state.targetDescription = stepDesc .. " - Use now!"
-            DXD.state.targetType = "travel"
-            DXD.state.hasTarget = true
-            for _, mod in pairs(DXD.modules) do
-                if mod.OnTargetChanged then mod:OnTargetChanged() end
+            itemID = 6948    -- Regular Hearthstone
+        end
+
+        -- Use the item via secure action or show pickup
+        if itemID then
+            local itemName, itemLink = C_Item.GetItemInfo(itemID)
+            if itemName then
+                DXD:Print(stepDesc .. ": Use " .. (itemLink or itemName) .. " now!")
+            end
+            -- Show the item on the action cursor so player can easily use it
+            if C_Item.IsItemInRange(itemID, "player") ~= false then
+                local bagID, slotID = self:FindItemInBags(itemID)
+                if bagID and slotID then
+                    C_Container.UseContainerItem(bagID, slotID)
+                end
             end
         end
 
-        -- Auto-advance after cast time
-        C_Timer.After(Config.TRAVEL.HS_CAST_TIME + 2, function()
+        -- Auto-advance after cast time + buffer for loading screen
+        C_Timer.After(Config.TRAVEL.HS_CAST_TIME + 4, function()
             if currentRoute and currentStep == stepIndex then
                 self:AdvanceStep()
             end
@@ -449,6 +546,21 @@ end
 -- UTILITIES
 ------------------------------------------------------------------------
 
+--- Find an item in the player's bags by item ID
+function TravelPlanner:FindItemInBags(itemID)
+    if not C_Container then return nil, nil end
+    for bag = 0, 4 do
+        local numSlots = C_Container.GetContainerNumSlots(bag)
+        for slot = 1, numSlots do
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and info.itemID == itemID then
+                return bag, slot
+            end
+        end
+    end
+    return nil, nil
+end
+
 function TravelPlanner:EstimateFlyTime(fromMapID, toMapID)
     local HBD = DXD.HBD
     if not HBD then return 120 end
@@ -469,18 +581,27 @@ function TravelPlanner:FindMapIDForLocation(locationName)
     if not locationName then return nil end
     locationName = strlower(locationName)
 
+    local partialMatch = nil
+
     if DXD.ZoneData then
         for continentName, continent in pairs(DXD.ZoneData) do
             if continent.children then
                 for zoneName, zone in pairs(continent.children) do
-                    if strlower(zoneName) == locationName or
-                       strfind(strlower(zoneName), locationName, 1, true) then
+                    local lowerZone = strlower(zoneName)
+                    -- Exact match always wins
+                    if lowerZone == locationName then
                         return zone.mapID
+                    end
+                    -- Track first partial match as fallback
+                    if not partialMatch and strfind(lowerZone, locationName, 1, true) then
+                        partialMatch = zone.mapID
                     end
                 end
             end
         end
     end
+
+    if partialMatch then return partialMatch end
 
     -- Fallback: WoW API lookup (limited range to avoid long iteration)
     for mapID = 1, 2700 do
@@ -565,5 +686,6 @@ end
 
 function TravelPlanner:Initialize()
     BuildContinentLookup()
+    BuildKnownZoneLookup()
     DXD:Debug("TravelPlanner initialized")
 end

@@ -35,7 +35,7 @@ local function CheckArrival()
     local dist2D = state.distance2D
     local zDelta = math.abs(state.elevationDelta)
     local arrivalDist = DXD.db.arrivalDistance or Config.BEACON.CLOSE_DISTANCE
-    local zThreshold = DXD.db.verticalTolerance or Config.ELEVATION.Z_ARRIVAL_THRESHOLD
+    local zThreshold = DXD.db.verticalTolerance or 10
 
     -- Proximity sound cue at 10 yards
     if dist2D < 10 and not wasClose then

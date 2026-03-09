@@ -103,14 +103,6 @@ function MinimapButton:ShowQuickMenu(anchorFrame)
                 DXD:ClearTarget()
                 DXD:Print("Waypoint cleared.")
             end)
-            rootDescription:CreateButton("Toggle Elevation HUD", function()
-                DXD.db.showElevation = not DXD.db.showElevation
-                DXD:Print("Elevation HUD: " .. (DXD.db.showElevation and "ON" or "OFF"))
-            end)
-            rootDescription:CreateButton("Toggle Direction Arrow", function()
-                DXD.db.showArrow = not DXD.db.showArrow
-                DXD:Print("Direction Arrow: " .. (DXD.db.showArrow and "ON" or "OFF"))
-            end)
             rootDescription:CreateButton("Settings (/dxd)", function()
                 local settings = DXD:GetModule("SettingsPanel")
                 if settings then settings:Toggle() end
@@ -121,8 +113,6 @@ function MinimapButton:ShowQuickMenu(anchorFrame)
         local menu = {
             { text = "DestinationXD", isTitle = true, notCheckable = true },
             { text = "Clear Waypoint", notCheckable = true, func = function() DXD:ClearTarget(); DXD:Print("Waypoint cleared.") end },
-            { text = "Toggle Elevation HUD", notCheckable = true, func = function() DXD.db.showElevation = not DXD.db.showElevation end },
-            { text = "Toggle Direction Arrow", notCheckable = true, func = function() DXD.db.showArrow = not DXD.db.showArrow end },
             { text = "Settings (/dxd)", notCheckable = true, func = function() local s = DXD:GetModule("SettingsPanel"); if s then s:Toggle() end end },
             { text = "Cancel", notCheckable = true },
         }

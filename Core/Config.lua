@@ -119,25 +119,6 @@ Config.EDGE_INDICATOR = {
 }
 
 ------------------------------------------------------------------------
--- ELEVATION SETTINGS
-------------------------------------------------------------------------
-Config.ELEVATION = {
-    ABOVE_THRESHOLD     = 8,    -- yards: delta > this = "above"
-    BELOW_THRESHOLD     = -8,   -- yards: delta < this = "below"
-    Z_ARRIVAL_THRESHOLD = 10,   -- yards: Z tolerance for arrival
-}
-
-------------------------------------------------------------------------
--- NAVIGATOR SETTINGS
-------------------------------------------------------------------------
-Config.NAVIGATOR = {
-    ARROW_SIZE        = 32,
-    ARROW_ALPHA       = 0.80,
-    MAX_PITCH_DEGREES = 30,
-    BEHIND_ALPHA_BUMP = 0.95,
-}
-
-------------------------------------------------------------------------
 -- OBSTRUCTION DETECTION
 ------------------------------------------------------------------------
 Config.OBSTRUCTION = {
@@ -171,14 +152,6 @@ Config.DEFAULTS = {
     autoClearOnArrival = true,
     arrivalDistance = 5,
 
-    -- Navigation HUD (direction arrow, distance, elevation)
-    showArrow = true,
-    showETA = true,
-    arrowScale = 1.0,
-    showElevation = true,
-    showDecomposedDistance = true,
-    verticalTolerance = 8,
-
     -- Travel Planner
     considerHearthstoneCooldown = true,
     hearthstoneLocation = "auto",
@@ -198,18 +171,4 @@ Config.DEFAULTS = {
         minimapPos = 225,
     },
 
-    -- HUD position (screen-relative)
-    hudAnchor = {
-        point = "RIGHT",
-        relativePoint = "RIGHT",
-        x = -120,
-        y = 50,
-    },
-
-    arrowAnchor = {
-        point = "TOP",
-        relativePoint = "TOP",
-        x = 0,
-        y = -120,
-    },
 }

@@ -123,16 +123,6 @@ local function CreateSettingsPanel()
     yOffset = CreateCheckboxSetting(content, "Auto-clear on arrival", "autoClearOnArrival", yOffset)
     yOffset = CreateSliderSetting(content, "Arrival distance", "arrivalDistance", 2, 15, 1, yOffset)
 
-    -- === NAVIGATION HUD ===
-    yOffset = yOffset - 12
-    yOffset = CreateSectionHeader(content, "NAVIGATION HUD", yOffset)
-    yOffset = CreateCheckboxSetting(content, "Show direction arrow", "showArrow", yOffset)
-    yOffset = CreateCheckboxSetting(content, "Show ETA", "showETA", yOffset)
-    yOffset = CreateSliderSetting(content, "Arrow/HUD scale", "arrowScale", 0.5, 2.0, 0.1, yOffset)
-    yOffset = CreateCheckboxSetting(content, "Show elevation indicator", "showElevation", yOffset)
-    yOffset = CreateCheckboxSetting(content, "Decomposed distance", "showDecomposedDistance", yOffset)
-    yOffset = CreateSliderSetting(content, "Vertical tolerance", "verticalTolerance", 3, 20, 1, yOffset)
-
     -- === TRAVEL PLANNER ===
     yOffset = yOffset - 12
     yOffset = CreateSectionHeader(content, "TRAVEL PLANNER", yOffset)
