@@ -288,7 +288,7 @@ function RadialMenu:Show()
     end
 
     -- Set center text
-    local _, cityData = ResolveCityMapID()
+    local _, cityData = DXD:ResolveCityMapID()
     if cityData then
         centerSublabel:SetText(cityData.cityName)
     else
