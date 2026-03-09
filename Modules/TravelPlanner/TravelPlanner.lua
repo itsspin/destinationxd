@@ -470,18 +470,17 @@ function TravelPlanner:NavigateToStep(stepIndex)
             itemID = 6948    -- Regular Hearthstone
         end
 
-        -- Use the item via secure action or show pickup
+        -- Find and use the hearthstone item from bags
         if itemID then
-            local itemName, itemLink = C_Item.GetItemInfo(itemID)
+            local itemName = GetItemInfo(itemID)
             if itemName then
-                DXD:Print(stepDesc .. ": Use " .. (itemLink or itemName) .. " now!")
+                DXD:Print(stepDesc .. ": Use " .. itemName .. " now!")
             end
-            -- Show the item on the action cursor so player can easily use it
-            if C_Item.IsItemInRange(itemID, "player") ~= false then
-                local bagID, slotID = self:FindItemInBags(itemID)
-                if bagID and slotID then
-                    C_Container.UseContainerItem(bagID, slotID)
-                end
+            local bagID, slotID = self:FindItemInBags(itemID)
+            if bagID and slotID then
+                C_Container.UseContainerItem(bagID, slotID)
+            else
+                DXD:Print("Hearthstone not found in bags - use a portal instead.")
             end
         end
 

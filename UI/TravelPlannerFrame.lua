@@ -734,6 +734,17 @@ DisplayRoute = function(destName, route, zoneData)
         routePanel.stepsText:SetText(table.concat(lines, "\n"))
         routePanel.timeText:SetText(routeDisplay:FormatTotalTime(route))
         routePanel.currentRoute = route
+
+        -- Restore the GO button handler (M+ dungeon selection overrides it)
+        routePanel.goBtn:SetScript("OnClick", function()
+            if routePanel.currentRoute then
+                local planner = DXD:GetModule("TravelPlanner")
+                if planner then
+                    planner:StartRoute(routePanel.currentRoute)
+                    travelFrame:Hide()
+                end
+            end
+        end)
         routePanel.goBtn:Show()
     end
 
