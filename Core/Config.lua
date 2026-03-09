@@ -151,6 +151,7 @@ Config.DEFAULTS = {
     playSounds = true,
     autoClearOnArrival = true,
     arrivalDistance = 5,
+    verticalTolerance = 8,
 
     -- Travel Planner
     considerHearthstoneCooldown = true,
