@@ -456,24 +456,37 @@ function TravelPlanner:NavigateToStep(stepIndex)
             DXD:SetTarget(step.toMapID, 0.5, 0.5, "travel", step.name, stepDesc)
         end
     elseif step.method == METHOD.HEARTHSTONE then
-        -- Hearthstone: show on-screen instruction via the HUD
-        -- Set a synthetic target so the DirectionArrow / RouteDisplay shows
+        -- Hearthstone: auto-use the item and set waypoint to destination
         local hsDestMap = step.toMapID
         if hsDestMap then
             DXD:SetTarget(hsDestMap, 0.5, 0.5, "travel", step.name, stepDesc .. " - Use now!")
+        end
+
+        -- Try to use the hearthstone item automatically
+        local itemID = nil
+        if step.name and step.name:find("Dalaran") then
+            itemID = 140192  -- Dalaran Hearthstone
         else
-            -- No destination map, still display via state so HUD shows
-            DXD.state.targetName = step.name
-            DXD.state.targetDescription = stepDesc .. " - Use now!"
-            DXD.state.targetType = "travel"
-            DXD.state.hasTarget = true
-            for _, mod in pairs(DXD.modules) do
-                if mod.OnTargetChanged then mod:OnTargetChanged() end
+            itemID = 6948    -- Regular Hearthstone
+        end
+
+        -- Use the item via secure action or show pickup
+        if itemID then
+            local itemName, itemLink = C_Item.GetItemInfo(itemID)
+            if itemName then
+                DXD:Print(stepDesc .. ": Use " .. (itemLink or itemName) .. " now!")
+            end
+            -- Show the item on the action cursor so player can easily use it
+            if C_Item.IsItemInRange(itemID, "player") ~= false then
+                local bagID, slotID = self:FindItemInBags(itemID)
+                if bagID and slotID then
+                    C_Container.UseContainerItem(bagID, slotID)
+                end
             end
         end
 
-        -- Auto-advance after cast time
-        C_Timer.After(Config.TRAVEL.HS_CAST_TIME + 2, function()
+        -- Auto-advance after cast time + buffer for loading screen
+        C_Timer.After(Config.TRAVEL.HS_CAST_TIME + 4, function()
             if currentRoute and currentStep == stepIndex then
                 self:AdvanceStep()
             end
@@ -532,6 +545,21 @@ end
 ------------------------------------------------------------------------
 -- UTILITIES
 ------------------------------------------------------------------------
+
+--- Find an item in the player's bags by item ID
+function TravelPlanner:FindItemInBags(itemID)
+    if not C_Container then return nil, nil end
+    for bag = 0, 4 do
+        local numSlots = C_Container.GetContainerNumSlots(bag)
+        for slot = 1, numSlots do
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and info.itemID == itemID then
+                return bag, slot
+            end
+        end
+    end
+    return nil, nil
+end
 
 function TravelPlanner:EstimateFlyTime(fromMapID, toMapID)
     local HBD = DXD.HBD

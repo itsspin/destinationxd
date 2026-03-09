@@ -150,7 +150,7 @@ local function EstimateElevation()
     state.elevationDelta = zEstimation.verticalDist * (zEstimation.zSign >= 0 and 1 or -1)
 
     -- Classify elevation state with hysteresis
-    local threshold = DXD.db and DXD.db.verticalTolerance or Config.ELEVATION.ABOVE_THRESHOLD
+    local threshold = DXD.db and DXD.db.verticalTolerance or 8
     local currentState = state.elevationState
     local vertDist = zEstimation.verticalDist
     local hysteresis = 2

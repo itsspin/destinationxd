@@ -683,25 +683,7 @@ OnZoneSelected = function(entry, zoneName, zoneData)
         return
     end
 
-    -- Dungeon (from zone list, not M+): set waypoint directly
-    -- Dungeon interior mapIDs can't be routed to via the travel graph,
-    -- so we set a target and let SetTarget resolve to the parent zone
-    if zoneData.dungeon then
-        routePanel.title:SetText("|cffa335ee+|r " .. zoneName)
-        routePanel.stepsText:SetText("Navigate to dungeon entrance\nWaypoint set on zone map")
-        routePanel.timeText:SetText("")
-        routePanel.currentRoute = nil
-
-        routePanel.goBtn:Show()
-        routePanel.goBtn:SetScript("OnClick", function()
-            DXD:SetTarget(zoneData.mapID, 0.5, 0.5, "dungeon", zoneName, "Dungeon")
-            if travelFrame then travelFrame:Hide() end
-        end)
-        routePanel:Show()
-        return
-    end
-
-    -- Regular zone: compute route
+    -- Regular zone or dungeon: compute route
     local fromMap = C_Map.GetBestMapForUnit("player")
     local toMap = zoneData.mapID
 

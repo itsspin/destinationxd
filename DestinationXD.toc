@@ -35,9 +35,6 @@ Modules\Beacon\BeaconAnimations.lua
 Modules\Beacon\Beacon.lua
 Modules\Elevation\FloorDetection.lua
 Modules\Elevation\ElevationTracker.lua
-Modules\Elevation\ElevationHUD.lua
-Modules\Navigator\DirectionArrow.lua
-Modules\Navigator\DistanceDisplay.lua
 Modules\Navigator\ProximityManager.lua
 Modules\Tracker\QuestTracker.lua
 Modules\Tracker\WaypointTracker.lua

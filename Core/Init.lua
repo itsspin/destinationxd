@@ -135,8 +135,8 @@ end
 local function InitializeModules()
     -- Initialize all registered modules in order
     local initOrder = {
-        "BeaconAnimations", "Beacon", "ElevationTracker", "ElevationHUD", "FloorDetection",
-        "DirectionArrow", "DistanceDisplay", "ProximityManager",
+        "BeaconAnimations", "Beacon", "ElevationTracker", "FloorDetection",
+        "ProximityManager",
         "QuestTracker", "WaypointTracker", "IntegrationBridge",
         "TravelPlanner", "PortalDatabase", "FlightPathGraph",
         "RouteDisplay", "Pinpoint", "MinimapButton", "SettingsPanel",
